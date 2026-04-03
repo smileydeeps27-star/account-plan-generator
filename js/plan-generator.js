@@ -2,21 +2,81 @@
 
 AP.PlanGenerator = (function() {
 
+  function repairJSON(text) {
+    // Fix unescaped control characters inside strings
+    var result = '';
+    var inString = false;
+    var escaped = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (escaped) { result += ch; escaped = false; continue; }
+      if (ch === '\\') { result += ch; escaped = true; continue; }
+      if (ch === '"') { inString = !inString; result += ch; continue; }
+      if (inString) {
+        // Replace unescaped newlines/tabs inside strings
+        if (ch === '\n') { result += '\\n'; continue; }
+        if (ch === '\r') { continue; }
+        if (ch === '\t') { result += '\\t'; continue; }
+      }
+      result += ch;
+    }
+    // Fix trailing commas before ] or }
+    result = result.replace(/,\s*([}\]])/g, '$1');
+    return result;
+  }
+
   function parseJSON(text) {
     if (!text) return null;
-    // Strip markdown fences if present
-    text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '');
-    try {
-      return JSON.parse(text);
-    } catch (e) {
-      // Try extracting JSON object
-      var match = text.match(/\{[\s\S]*\}/);
-      if (match) {
-        try { return JSON.parse(match[0]); } catch (e2) { /* fall through */ }
-      }
-      console.error('[PlanGen] JSON parse failed:', text.substring(0, 300));
-      return null;
+
+    // Strip markdown fences
+    var cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+    // Direct parse
+    try { return JSON.parse(cleaned); } catch (e) { /* continue */ }
+
+    // Extract JSON object by brace matching
+    var start = cleaned.indexOf('{');
+    if (start === -1) return null;
+
+    var depth = 0;
+    var end = -1;
+    for (var i = start; i < cleaned.length; i++) {
+      if (cleaned[i] === '{') depth++;
+      else if (cleaned[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
     }
+
+    var jsonStr = end > start ? cleaned.substring(start, end + 1) : cleaned;
+
+    // Try direct parse of extracted
+    try { return JSON.parse(jsonStr); } catch (e2) { /* continue */ }
+
+    // Repair and retry
+    var repaired = repairJSON(jsonStr);
+    try { return JSON.parse(repaired); } catch (e3) {
+      console.error('[PlanGen] Parse failed after repair at:', e3.message.match(/position (\d+)/)?.[1] || 'unknown');
+    }
+
+    // Last resort: truncate at the error position and close brackets
+    try {
+      var posMatch = e3 ? e3.message.match(/position (\d+)/) : null;
+      if (posMatch) {
+        var pos = parseInt(posMatch[1]);
+        // Walk back to find last complete element
+        var truncated = repaired.substring(0, pos);
+        // Close any open structures
+        var opens = (truncated.match(/\[/g) || []).length - (truncated.match(/\]/g) || []).length;
+        var braces = (truncated.match(/\{/g) || []).length - (truncated.match(/\}/g) || []).length;
+        // Remove trailing comma or partial value
+        truncated = truncated.replace(/,\s*$/, '').replace(/,\s*"[^"]*$/, '');
+        for (var j = 0; j < opens; j++) truncated += ']';
+        for (var k = 0; k < braces; k++) truncated += '}';
+        return JSON.parse(truncated);
+      }
+    } catch (e4) {
+      console.error('[PlanGen] Truncation repair also failed');
+    }
+
+    return null;
   }
 
   function summaryOf(overview) {
@@ -96,6 +156,7 @@ AP.PlanGenerator = (function() {
 
     try {
       var r1 = await AP.ApiClient.call(systemBase, call1Message, { maxTokens: 8192, useGrounding: true });
+      console.log('[PlanGen] Call 1 response received, text length:', r1.text ? r1.text.length : 0);
       var p1 = parseJSON(r1.text);
       if (p1) {
         plan.overview = p1.overview || null;
@@ -103,6 +164,9 @@ AP.PlanGenerator = (function() {
         if (r1.sources && r1.sources.length) {
           plan._sources = r1.sources;
         }
+        console.log('[PlanGen] Call 1 parsed successfully, overview keys:', plan.overview ? Object.keys(plan.overview) : 'null');
+      } else {
+        console.error('[PlanGen] Call 1 parsed to null');
       }
     } catch (err) {
       console.error('[PlanGen] Call 1 error:', err.message);
