@@ -117,16 +117,21 @@ async function handleGeminiProxy(req, res) {
 
     const geminiPayload = {
       contents: [
-        { role: 'user', parts: [{ text: userMessage }] }
+        { role: 'user', parts: [{ text: useGrounding ? (systemPrompt + '\n\n' + userMessage) : userMessage }] }
       ],
-      systemInstruction: {
-        parts: [{ text: systemPrompt }]
-      },
       generationConfig: {
         maxOutputTokens: parsed.max_tokens || 8192,
         temperature: parsed.temperature || 0.7
       }
     };
+
+    // Only use systemInstruction for non-grounding calls
+    // (gemini-2.5-flash can return empty content when systemInstruction + tools are combined)
+    if (!useGrounding) {
+      geminiPayload.systemInstruction = {
+        parts: [{ text: systemPrompt }]
+      };
+    }
 
     // Enable Google Search grounding
     if (useGrounding) {
@@ -137,6 +142,8 @@ async function handleGeminiProxy(req, res) {
     if (jsonMode && !useGrounding) {
       geminiPayload.generationConfig.responseMimeType = 'application/json';
     }
+
+    console.log('[Gemini] Request: system_len=' + systemPrompt.length + ' user_len=' + userMessage.length + ' grounding=' + useGrounding + ' jsonMode=' + jsonMode);
 
     const result = await callGemini(geminiPayload);
 
@@ -149,14 +156,23 @@ async function handleGeminiProxy(req, res) {
 
     // Extract text
     let text = '';
-    if (result.body.candidates && result.body.candidates[0] &&
-        result.body.candidates[0].content && result.body.candidates[0].content.parts) {
-      text = result.body.candidates[0].content.parts.map(p => p.text || '').join('');
+    const candidate = result.body.candidates && result.body.candidates[0];
+    if (candidate && candidate.content && candidate.content.parts) {
+      text = candidate.content.parts.map(p => p.text || '').join('');
+    }
+
+    // Debug: log when text is empty
+    if (!text) {
+      console.log('[Gemini] Empty text response. Full candidate:', JSON.stringify(candidate || {}).substring(0, 2000));
+      const usage = result.body.usageMetadata || {};
+      console.log('[Gemini] Usage: prompt=' + (usage.promptTokenCount || 0) + ' output=' + (usage.candidatesTokenCount || 0) + ' thinking=' + (usage.thoughtsTokenCount || 0));
+      if (result.body.promptFeedback) console.log('[Gemini] promptFeedback:', JSON.stringify(result.body.promptFeedback));
+    } else {
+      console.log('[Gemini] Response OK, text length:', text.length, 'grounding:', useGrounding);
     }
 
     // Extract grounding sources if available
     let sources = [];
-    const candidate = result.body.candidates && result.body.candidates[0];
     if (candidate && candidate.groundingMetadata && candidate.groundingMetadata.groundingChunks) {
       sources = candidate.groundingMetadata.groundingChunks
         .filter(c => c.web)

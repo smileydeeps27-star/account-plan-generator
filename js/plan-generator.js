@@ -25,6 +25,27 @@ AP.PlanGenerator = (function() {
     return result;
   }
 
+  function extractJSON(text) {
+    // String-aware brace matching — braces inside strings don't count
+    var start = text.indexOf('{');
+    if (start === -1) return null;
+
+    var depth = 0;
+    var inStr = false;
+    var esc = false;
+    for (var i = start; i < text.length; i++) {
+      var ch = text[i];
+      if (esc) { esc = false; continue; }
+      if (ch === '\\') { esc = true; continue; }
+      if (ch === '"') { inStr = !inStr; continue; }
+      if (inStr) continue;
+      if (ch === '{') depth++;
+      else if (ch === '}') { depth--; if (depth === 0) return text.substring(start, i + 1); }
+    }
+    // Unclosed — return from start to end
+    return text.substring(start);
+  }
+
   function parseJSON(text) {
     if (!text) return null;
 
@@ -34,48 +55,55 @@ AP.PlanGenerator = (function() {
     // Direct parse
     try { return JSON.parse(cleaned); } catch (e) { /* continue */ }
 
-    // Extract JSON object by brace matching
-    var start = cleaned.indexOf('{');
-    if (start === -1) return null;
-
-    var depth = 0;
-    var end = -1;
-    for (var i = start; i < cleaned.length; i++) {
-      if (cleaned[i] === '{') depth++;
-      else if (cleaned[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
-    }
-
-    var jsonStr = end > start ? cleaned.substring(start, end + 1) : cleaned;
+    // Extract JSON object with string-aware brace matching
+    var jsonStr = extractJSON(cleaned);
+    if (!jsonStr) return null;
 
     // Try direct parse of extracted
     try { return JSON.parse(jsonStr); } catch (e2) { /* continue */ }
 
-    // Repair and retry
+    // Repair (fix control chars in strings, trailing commas) and retry
     var repaired = repairJSON(jsonStr);
+    var lastError = null;
     try { return JSON.parse(repaired); } catch (e3) {
-      console.error('[PlanGen] Parse failed after repair at:', e3.message.match(/position (\d+)/)?.[1] || 'unknown');
+      lastError = e3;
+      console.error('[PlanGen] Parse failed after repair at:', e3.message);
     }
 
     // Last resort: truncate at the error position and close brackets
-    try {
-      var posMatch = e3 ? e3.message.match(/position (\d+)/) : null;
-      if (posMatch) {
-        var pos = parseInt(posMatch[1]);
-        // Walk back to find last complete element
-        var truncated = repaired.substring(0, pos);
-        // Close any open structures
-        var opens = (truncated.match(/\[/g) || []).length - (truncated.match(/\]/g) || []).length;
-        var braces = (truncated.match(/\{/g) || []).length - (truncated.match(/\}/g) || []).length;
-        // Remove trailing comma or partial value
-        truncated = truncated.replace(/,\s*$/, '').replace(/,\s*"[^"]*$/, '');
-        for (var j = 0; j < opens; j++) truncated += ']';
-        for (var k = 0; k < braces; k++) truncated += '}';
-        return JSON.parse(truncated);
+    if (lastError) {
+      try {
+        var posMatch = lastError.message.match(/position (\d+)/);
+        if (posMatch) {
+          var pos = parseInt(posMatch[1]);
+          var truncated = repaired.substring(0, pos);
+          // Remove trailing partial key/value
+          truncated = truncated.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, '');
+          truncated = truncated.replace(/,\s*$/, '');
+          // Count open brackets/braces (string-aware)
+          var opens = 0, braces = 0, tInStr = false, tEsc = false;
+          for (var ti = 0; ti < truncated.length; ti++) {
+            var tc = truncated[ti];
+            if (tEsc) { tEsc = false; continue; }
+            if (tc === '\\') { tEsc = true; continue; }
+            if (tc === '"') { tInStr = !tInStr; continue; }
+            if (tInStr) continue;
+            if (tc === '[') opens++;
+            else if (tc === ']') opens--;
+            else if (tc === '{') braces++;
+            else if (tc === '}') braces--;
+          }
+          for (var j = 0; j < opens; j++) truncated += ']';
+          for (var k = 0; k < braces; k++) truncated += '}';
+          console.log('[PlanGen] Truncation repair: closing ' + opens + ' arrays, ' + braces + ' objects');
+          return JSON.parse(truncated);
+        }
+      } catch (e4) {
+        console.error('[PlanGen] Truncation repair also failed:', e4.message);
       }
-    } catch (e4) {
-      console.error('[PlanGen] Truncation repair also failed');
     }
 
+    console.error('[PlanGen] All parse attempts failed. Text:', cleaned.substring(0, 500));
     return null;
   }
 
@@ -154,23 +182,35 @@ AP.PlanGenerator = (function() {
       '- Business groups should reflect their actual organizational structure.\n' +
       '- Strategic priorities should be specific and named (e.g., "Growth Action Plan" not just "growth").';
 
-    try {
-      var r1 = await AP.ApiClient.call(systemBase, call1Message, { maxTokens: 8192, useGrounding: true });
-      console.log('[PlanGen] Call 1 response received, text length:', r1.text ? r1.text.length : 0);
-      var p1 = parseJSON(r1.text);
-      if (p1) {
-        plan.overview = p1.overview || null;
-        plan.news = p1.news || [];
-        if (r1.sources && r1.sources.length) {
-          plan._sources = r1.sources;
+    // Call 1 with retry (grounded calls can return empty text)
+    for (var attempt1 = 1; attempt1 <= 2; attempt1++) {
+      try {
+        var r1 = await AP.ApiClient.call(systemBase, call1Message, { maxTokens: 8192, useGrounding: true });
+        console.log('[PlanGen] Call 1 attempt ' + attempt1 + ', text length:', r1.text ? r1.text.length : 0);
+        if (!r1.text && attempt1 < 2) {
+          console.log('[PlanGen] Call 1 empty response, retrying...');
+          continue;
         }
-        console.log('[PlanGen] Call 1 parsed successfully, overview keys:', plan.overview ? Object.keys(plan.overview) : 'null');
-      } else {
-        console.error('[PlanGen] Call 1 parsed to null');
+        var p1 = parseJSON(r1.text);
+        if (p1) {
+          plan.overview = p1.overview || null;
+          plan.news = p1.news || [];
+          if (r1.sources && r1.sources.length) {
+            plan._sources = r1.sources;
+          }
+          console.log('[PlanGen] Call 1 parsed successfully, overview keys:', plan.overview ? Object.keys(plan.overview) : 'null');
+          break;
+        } else if (attempt1 < 2) {
+          console.log('[PlanGen] Call 1 parse failed, retrying...');
+        } else {
+          console.error('[PlanGen] Call 1 parsed to null after retries');
+        }
+      } catch (err) {
+        console.error('[PlanGen] Call 1 error:', err.message);
+        if (attempt1 >= 2) {
+          plan.overview = { industry: industryHint || '', hqLocation: '', annualRevenue: revenueHint || 'N/A', employeeCount: 'N/A', businessGroups: [], financialSnapshot: [], strategicPriorities: [], technologyLandscape: 'Research failed: ' + err.message };
+        }
       }
-    } catch (err) {
-      console.error('[PlanGen] Call 1 error:', err.message);
-      plan.overview = { industry: industryHint || '', hqLocation: '', annualRevenue: revenueHint || 'N/A', employeeCount: 'N/A', businessGroups: [], financialSnapshot: [], strategicPriorities: [], technologyLandscape: 'Research failed: ' + err.message };
     }
 
     // ===== CALL 2: Decision Intelligence Priorities + Competitive =====
