@@ -1,0 +1,12 @@
+{
+  "name": "account-plan-generator",
+  "version": "1.0.0",
+  "description": "AI-powered B2B Account Plan Generator with web search grounding",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

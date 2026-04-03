@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Plan Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/plan.css">
+</head>
+<body>
+
+  <!-- ===== Topbar ===== -->
+  <header class="topbar">
+    <a class="topbar-brand" onclick="AP.navigateTo('home')">
+      <div class="topbar-brand-icon">AP</div>
+      <span class="topbar-brand-text">Account Plan Generator</span>
+    </a>
+    <div class="topbar-right">
+      <button class="settings-btn" id="btn-settings" title="Settings">&#9881;</button>
+    </div>
+  </header>
+
+  <!-- ===== Screen 1: Home ===== -->
+  <main id="screen-home" class="screen active">
+    <div class="screen-container">
+      <div class="screen-header">
+        <h1 class="screen-title">Account Plan Generator</h1>
+        <p class="screen-subtitle">Generate AI-powered, executive-ready account plans with real-time web intelligence.</p>
+      </div>
+
+      <div id="key-banner" class="key-banner">Checking API key status...</div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">New Account Plan</div>
+        </div>
+        <form id="plan-form">
+          <div class="form-group">
+            <label class="form-label" for="input-company">Company Name *</label>
+            <input type="text" id="input-company" class="form-input" placeholder="e.g. Unilever, Nestl&eacute;, P&amp;G..." required autocomplete="off">
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label class="form-label" for="input-industry">Industry (optional)</label>
+              <div class="select-wrapper">
+                <select id="input-industry" class="form-select">
+                  <option value="">Auto-detect</option>
+                  <option value="CPG / FMCG">CPG / FMCG</option>
+                  <option value="Manufacturing">Manufacturing</option>
+                  <option value="Retail">Retail</option>
+                  <option value="Pharmaceuticals">Pharmaceuticals</option>
+                  <option value="Hi-Tech">Hi-Tech</option>
+                  <option value="Financial Services">Financial Services</option>
+                  <option value="Energy">Energy</option>
+                  <option value="Automotive">Automotive</option>
+                  <option value="Chemicals">Chemicals</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="Telecommunications">Telecommunications</option>
+                  <option value="Aerospace & Defense">Aerospace & Defense</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="input-revenue">Revenue Range (optional)</label>
+              <div class="select-wrapper">
+                <select id="input-revenue" class="form-select">
+                  <option value="">Auto-detect</option>
+                  <option value="$500M - $1B">$500M - $1B</option>
+                  <option value="$1B - $5B">$1B - $5B</option>
+                  <option value="$5B - $20B">$5B - $20B</option>
+                  <option value="$20B - $50B">$20B - $50B</option>
+                  <option value="$50B+">$50B+</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <button type="submit" id="btn-generate" class="btn btn-ai btn-block">
+            <span>&#10024;</span> Generate Account Plan
+          </button>
+        </form>
+      </div>
+
+      <div class="card mt-24">
+        <div class="card-header">
+          <div class="card-title">Saved Plans</div>
+        </div>
+        <div id="saved-plans-list"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== Screen 2: Generating ===== -->
+  <main id="screen-generating" class="screen">
+    <div class="screen-container">
+      <div class="progress-container">
+        <div style="font-size:48px; margin-bottom:24px;">&#10024;</div>
+        <h2 style="font-size:22px; font-weight:700; margin-bottom:8px; color:var(--text-primary);">Generating Account Plan</h2>
+        <p class="text-secondary mb-16">Researching company data, analyzing opportunities, and building your plan...</p>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+        <div id="generating-phase" class="progress-phase">Initializing...</div>
+        <div id="generating-step" class="progress-step">Step 0 of 5</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== Screen 3: Plan View ===== -->
+  <main id="screen-plan" class="screen">
+    <div class="screen-container" style="max-width:1100px;">
+      <div id="plan-container"></div>
+    </div>
+  </main>
+
+  <!-- ===== Screen 4: Settings ===== -->
+  <main id="screen-settings" class="screen">
+    <div class="screen-container" style="max-width:700px;">
+      <div class="screen-header">
+        <h1 class="screen-title">Settings</h1>
+        <p class="screen-subtitle">Configure your seller profile and preferences.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Seller Profile</div>
+          <div class="card-subtitle">This context is injected into every AI prompt to personalize plans.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="setting-company">Company Name</label>
+          <input type="text" id="setting-company" class="form-input" placeholder="Your company name">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="setting-tagline">Tagline</label>
+          <input type="text" id="setting-tagline" class="form-input" placeholder="One-line description">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="setting-description">Description</label>
+          <textarea id="setting-description" class="form-textarea" rows="3" placeholder="What your company does..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="setting-capabilities">Capabilities (one per line: Domain: Skill1, Skill2)</label>
+          <textarea id="setting-capabilities" class="form-textarea" rows="4" placeholder="Supply Chain: Demand Sensing, Inventory Optimization&#10;Finance: Revenue Management, Cost Optimization"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="setting-differentiators">Key Differentiators (one per line)</label>
+          <textarea id="setting-differentiators" class="form-textarea" rows="4" placeholder="Real-time decisioning...&#10;Closed-loop execution..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="setting-competitors">Competitors (one per line: Name | Weakness)</label>
+          <textarea id="setting-competitors" class="form-textarea" rows="4" placeholder="Kinaxis | Planning-heavy, not autonomous&#10;SAP IBP | Batch-driven, slower time-to-insight"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="setting-value-metrics">Value Metrics (one per line)</label>
+          <textarea id="setting-value-metrics" class="form-textarea" rows="3" placeholder="2-5% reduction in inventory costs&#10;10-20% improvement in forecast accuracy"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="setting-icp">Ideal Customer Profile</label>
+          <textarea id="setting-icp" class="form-textarea" rows="2" placeholder="Large enterprises ($500M+ revenue)..."></textarea>
+        </div>
+
+        <div style="display:flex; gap:12px; margin-top:24px;">
+          <button id="btn-save-settings" class="btn btn-primary">Save Settings</button>
+          <button id="btn-reset-settings" class="btn btn-secondary">Reset to Defaults</button>
+          <button id="btn-settings-back" class="btn btn-secondary" style="margin-left:auto;">Back</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== Scripts ===== -->
+  <script src="js/utils.js"></script>
+  <script src="js/api-client.js"></script>
+  <script src="js/seller-profile.js"></script>
+  <script src="js/plan-generator.js"></script>
+  <script src="js/plan-renderer.js"></script>
+  <script src="js/plan-editor.js"></script>
+  <script src="js/plan-export.js"></script>
+  <script src="js/plan-persistence.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,478 @@
+/* ===== Account Plan Generator — Plan Styles ===== */
+
+/* ===== Plan Header ===== */
+.plan-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.plan-header-left h1 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.plan-header-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.plan-header-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.plan-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ===== Tabs ===== */
+.plan-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.plan-tabs::-webkit-scrollbar { display: none; }
+
+.plan-tab {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition);
+  white-space: nowrap;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  font-family: inherit;
+}
+
+.plan-tab:hover {
+  color: var(--text-secondary);
+}
+
+.plan-tab.active {
+  color: var(--accent-primary);
+  border-bottom-color: var(--accent-primary);
+}
+
+/* ===== Tab Panels ===== */
+.plan-panel {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.plan-panel.active { display: block; }
+
+/* ===== Section Headers ===== */
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  letter-spacing: -0.3px;
+}
+
+.section-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+/* ===== Overview Grid ===== */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.overview-field {
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.overview-field-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+}
+
+.overview-field-value {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* ===== Data Tables ===== */
+.plan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.plan-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.plan-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: var(--text-primary);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.plan-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.plan-table .text-strong {
+  font-weight: 600;
+}
+
+/* ===== Priority Cards ===== */
+.priority-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.priority-card:hover {
+  border-color: var(--border-hover);
+}
+
+.priority-rank {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--accent-primary);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.priority-rank.top {
+  background: var(--gradient-primary);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.priority-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-right: 40px;
+}
+
+.priority-area {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.priority-section {
+  margin-bottom: 10px;
+}
+
+.priority-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+}
+
+.priority-section-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.priority-footer {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+/* ===== Stakeholder Table Extras ===== */
+.role-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.role-badge.sponsor { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); }
+.role-badge.champion { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+.role-badge.evaluator { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.role-badge.influencer { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+.role-badge.blocker { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+
+/* ===== News Cards ===== */
+.news-item {
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+}
+
+.news-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.news-item-headline {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.news-item-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.news-item-detail {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.news-item-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ===== Competitive Cards ===== */
+.competitive-positioning {
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* ===== Value Hypothesis ===== */
+.exec-pitch {
+  background: rgba(168, 85, 247, 0.05);
+  border: 1px solid rgba(168, 85, 247, 0.15);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  font-style: italic;
+}
+
+/* ===== Day Plan Phases ===== */
+.phase-block {
+  margin-bottom: 24px;
+}
+
+.phase-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.phase-badge {
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.phase-badge.d10 { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); }
+.phase-badge.d30 { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+.phase-badge.d60 { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); }
+
+/* ===== Risk Likelihood Badges ===== */
+.likelihood-high { color: var(--accent-red); font-weight: 700; }
+.likelihood-medium { color: var(--accent-amber); font-weight: 700; }
+.likelihood-low { color: var(--accent-green); font-weight: 700; }
+
+/* ===== Business Groups ===== */
+.biz-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.biz-group:last-child { border-bottom: none; }
+
+.biz-group-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.biz-group-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.biz-group-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* ===== Strategic Priorities List ===== */
+.priorities-list {
+  list-style: none;
+  counter-reset: priority;
+}
+
+.priorities-list li {
+  counter-increment: priority;
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.priorities-list li::before {
+  content: counter(priority);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ===== Editable Fields ===== */
+[contenteditable="true"] {
+  outline: none;
+  border-left: 2px solid transparent;
+  padding-left: 6px;
+  margin-left: -8px;
+  transition: border-color 0.2s ease;
+  border-radius: 2px;
+}
+
+[contenteditable="true"]:hover {
+  border-left-color: rgba(99, 102, 241, 0.3);
+}
+
+[contenteditable="true"]:focus {
+  border-left-color: var(--accent-primary);
+  background: rgba(99, 102, 241, 0.03);
+}
+
+/* ===== Export Bar ===== */
+.export-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .plan-header { flex-direction: column; }
+  .plan-header-actions { width: 100%; }
+  .overview-grid { grid-template-columns: 1fr 1fr; }
+  .plan-tab { padding: 8px 12px; font-size: 12px; }
+  .priority-card { padding: 16px; }
+  .plan-table { font-size: 12px; }
+  .plan-table th, .plan-table td { padding: 8px 10px; }
+}
