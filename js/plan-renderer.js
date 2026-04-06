@@ -23,7 +23,7 @@ AP.PlanRenderer = (function() {
     html += '</div>';
     html += '</div>';
     html += '<div class="plan-header-actions">';
-    html += '<button class="btn btn-sm btn-secondary" id="btn-new-plan">&#8592; New Plan</button>';
+    html += '<button class="btn btn-sm btn-secondary" id="btn-new-plan">&#8592; Generate New Plan</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-save-plan">Save</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-copy-md">Copy Markdown</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-export-docx">Export Word</button>';
