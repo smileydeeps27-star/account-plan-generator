@@ -35,21 +35,25 @@ AP.PlanRenderer = (function() {
     var tabs = [
       { id: 'overview', label: 'Overview' },
       { id: 'news', label: 'News' },
-      { id: 'techlandscape', label: 'Tech Landscape' },
+      { id: 'techlandscape', label: 'Tech Stack' },
       { id: 'priorities', label: 'DI Priorities' },
       { id: 'stakeholders', label: 'Stakeholders' },
       { id: 'competitive', label: 'Competitive' },
-      { id: 'value', label: 'Value Hypothesis' },
-      { id: 'strategy', label: 'Account Strategy' },
-      { id: 'plan', label: '30-60-90 Plan' },
-      { id: 'risks', label: 'Risks & Metrics' },
-      { id: 'meetingnotes', label: 'Meeting Notes' }
+      { id: 'value', label: 'Value' },
+      { id: 'strategy', label: 'Strategy' },
+      { id: 'plan', label: '30-60-90' },
+      { id: 'risks', label: 'Risks' },
+      { id: 'meetingnotes', label: 'Notes' }
     ];
 
+    html += '<div class="plan-tabs-wrapper">';
+    html += '<div class="scroll-fade scroll-fade-left" style="opacity:0"></div>';
     html += '<div class="plan-tabs">';
     tabs.forEach(function(t, i) {
       html += '<button class="plan-tab' + (i === 0 ? ' active' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>';
     });
+    html += '</div>';
+    html += '<div class="scroll-fade scroll-fade-right"></div>';
     html += '</div>';
 
     // Panels
@@ -77,6 +81,22 @@ AP.PlanRenderer = (function() {
         if (panel) panel.classList.add('active');
       });
     });
+
+    // Wire scroll fade indicators
+    var tabsEl = container.querySelector('.plan-tabs');
+    var fadeLeft = container.querySelector('.scroll-fade-left');
+    var fadeRight = container.querySelector('.scroll-fade-right');
+    if (tabsEl && fadeLeft && fadeRight) {
+      var updateFades = function() {
+        var sl = tabsEl.scrollLeft;
+        var maxScroll = tabsEl.scrollWidth - tabsEl.clientWidth;
+        fadeLeft.style.opacity = sl > 5 ? '1' : '0';
+        fadeRight.style.opacity = (maxScroll > 5 && sl < maxScroll - 5) ? '1' : '0';
+      };
+      tabsEl.addEventListener('scroll', updateFades);
+      setTimeout(updateFades, 100);
+      window.addEventListener('resize', updateFades);
+    }
 
     wireActions(plan);
   }

@@ -39,6 +39,30 @@
 }
 
 /* ===== Tabs ===== */
+.plan-tabs-wrapper {
+  position: relative;
+}
+
+.plan-tabs-wrapper .scroll-fade {
+  position: absolute;
+  top: 0;
+  bottom: 1px;
+  width: 40px;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.2s;
+}
+
+.plan-tabs-wrapper .scroll-fade-right {
+  right: 0;
+  background: linear-gradient(to right, transparent, var(--bg-primary));
+}
+
+.plan-tabs-wrapper .scroll-fade-left {
+  left: 0;
+  background: linear-gradient(to left, transparent, var(--bg-primary));
+}
+
 .plan-tabs {
   display: flex;
   gap: 2px;
@@ -52,7 +76,7 @@
 .plan-tabs::-webkit-scrollbar { display: none; }
 
 .plan-tab {
-  padding: 10px 18px;
+  padding: 10px 14px;
   font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
