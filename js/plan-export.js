@@ -306,11 +306,40 @@ AP.PlanExport = (function() {
       if (!text) return;
       children.push(new D.Paragraph({ children: [new D.TextRun({ text: text, size: 22 })], spacing: { after: 120 } }));
     }
+    // US Letter with 1" margins = 9360 DXA content width
+    var PAGE_W = 9360;
+    var cellBorder = { style: D.BorderStyle.SINGLE, size: 1, color: 'CCCCCC' };
+    var cellBorders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
+    var cellMargins = { top: 60, bottom: 60, left: 100, right: 100 };
+
     function addTable(headers, rows) {
+      var colCount = headers.length;
+      var colW = Math.floor(PAGE_W / colCount);
+      var colWidths = headers.map(function() { return colW; });
+      // Give remaining space to last column
+      colWidths[colCount - 1] = PAGE_W - colW * (colCount - 1);
+
       var tableRows = [];
-      tableRows.push(new D.TableRow({ children: headers.map(function(h) { return new D.TableCell({ children: [new D.Paragraph({ children: [new D.TextRun({ text: h, bold: true, size: 18 })] })], shading: { fill: 'E8E8E8' } }); }) }));
-      rows.forEach(function(row) { tableRows.push(new D.TableRow({ children: row.map(function(cell) { return new D.TableCell({ children: [new D.Paragraph({ children: [new D.TextRun({ text: String(cell || ''), size: 20 })] })] }); }) })); });
-      children.push(new D.Table({ rows: tableRows, width: { size: 100, type: D.WidthType.PERCENTAGE } }));
+      tableRows.push(new D.TableRow({ children: headers.map(function(h, i) {
+        return new D.TableCell({
+          borders: cellBorders,
+          width: { size: colWidths[i], type: D.WidthType.DXA },
+          shading: { fill: 'D5E8F0', type: D.ShadingType ? D.ShadingType.CLEAR : 'clear' },
+          margins: cellMargins,
+          children: [new D.Paragraph({ children: [new D.TextRun({ text: h, bold: true, size: 18, font: 'Arial' })] })]
+        });
+      }) }));
+      rows.forEach(function(row) {
+        tableRows.push(new D.TableRow({ children: row.map(function(cell, i) {
+          return new D.TableCell({
+            borders: cellBorders,
+            width: { size: colWidths[i], type: D.WidthType.DXA },
+            margins: cellMargins,
+            children: [new D.Paragraph({ children: [new D.TextRun({ text: String(cell || ''), size: 20, font: 'Arial' })] })]
+          });
+        }) }));
+      });
+      children.push(new D.Table({ rows: tableRows, width: { size: PAGE_W, type: D.WidthType.DXA }, columnWidths: colWidths }));
     }
 
     // Overview
