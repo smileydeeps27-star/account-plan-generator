@@ -341,11 +341,11 @@ AP.PlanGenerator = (function() {
       '  "competitive": {\n' +
       '    "positioning": "4-5 SENTENCES: How ' + sellerName + ' should position for THIS account. Reference their tech stack, pain points, and competitive dynamics.",\n' +
       '    "landscape": [\n' +
-      '      {"competitor": "Competitor Name", "presence": "Incumbent|Evaluating|Rumored|Potential Threat", "weakness": "2-3 SENTENCES about their weakness for THIS account", "sellerAdvantage": "2-3 SENTENCES about ' + sellerName + ' advantage", "battleCard": "1-2 sentence talk track for an AE", "userReported": false}\n' +
+      '      {"competitor": "Competitor Name", "presence": "Incumbent|Evaluating|Rumored|Potential Threat", "weakness": "2-3 SENTENCES about their weakness for THIS account", "sellerAdvantage": "2-3 SENTENCES about ' + sellerName + ' advantage", "battleCard": "1-2 sentence talk track for a CP", "userReported": false}\n' +
       '    ]\n' +
       '  },\n' +
       '  "valueHypothesis": {\n' +
-      '    "executivePitch": "4-5 POWERFUL SENTENCES an AE could use verbatim to a CEO/COO. Reference their specific priorities, name specific numbers.",\n' +
+      '    "executivePitch": "4-5 POWERFUL SENTENCES a CP could use verbatim to a CEO/COO. Reference their specific priorities, name specific numbers.",\n' +
       '    "metrics": [\n' +
       '      {"metric": "Specific business improvement", "impact": "Dollar value scaled to this company", "confidence": "High|Medium|Low", "basis": "How this was estimated"}\n' +
       '    ],\n' +
@@ -391,7 +391,7 @@ AP.PlanGenerator = (function() {
       '    "day30": {\n' +
       '      "title": "Phase title",\n' +
       '      "whatGoodLooksLike": "2-3 SENTENCES describing success criteria at day 30",\n' +
-      '      "actions": [{"day": "1-5", "action": "Specific action with stakeholder names", "owner": "AE|SE|Marketing|AE + SE", "deliverable": "What is produced"}]\n' +
+      '      "actions": [{"day": "1-5", "action": "Specific action with stakeholder names", "owner": "CP|SE|Marketing|CP + SE", "deliverable": "What is produced"}]\n' +
       '    },\n' +
       '    "day60": {\n' +
       '      "title": "Phase title",\n' +
@@ -429,19 +429,19 @@ AP.PlanGenerator = (function() {
     if (!plan.dayPlan) {
       plan.dayPlan = {
         day30: { title: 'Research & Outreach', whatGoodLooksLike: 'Champion identified and first discovery meeting completed.', actions: [
-          { day: '1-5', action: 'Finalize account plan and validate org structure', owner: 'AE', deliverable: 'Completed account plan' },
-          { day: '6-15', action: 'Multi-channel outreach to key stakeholders', owner: 'AE', deliverable: 'First meeting booked' },
-          { day: '16-30', action: 'Conduct discovery and qualify opportunity', owner: 'AE + SE', deliverable: 'Discovery notes and qualification' }
+          { day: '1-5', action: 'Finalize account plan and validate org structure', owner: 'CP', deliverable: 'Completed account plan' },
+          { day: '6-15', action: 'Multi-channel outreach to key stakeholders', owner: 'CP', deliverable: 'First meeting booked' },
+          { day: '16-30', action: 'Conduct discovery and qualify opportunity', owner: 'CP + SE', deliverable: 'Discovery notes and qualification' }
         ]},
         day60: { title: 'Discovery & Value Demonstration', whatGoodLooksLike: 'Business case presented, 3+ stakeholders engaged.', actions: [
           { day: '31-40', action: 'Deliver tailored workshop or demo', owner: 'SE', deliverable: 'Workshop completed' },
-          { day: '41-50', action: 'Build business case with account-specific data', owner: 'AE + Value Engineering', deliverable: 'Business case document' },
-          { day: '51-60', action: 'Secure executive sponsor alignment', owner: 'AE', deliverable: 'Executive meeting' }
+          { day: '41-50', action: 'Build business case with account-specific data', owner: 'CP + Value Engineering', deliverable: 'Business case document' },
+          { day: '51-60', action: 'Secure executive sponsor alignment', owner: 'CP', deliverable: 'Executive meeting' }
         ]},
         day90: { title: 'Qualification & Commitment', whatGoodLooksLike: 'POC/pilot agreed, commercial terms in discussion.', actions: [
-          { day: '61-70', action: 'Present POC proposal', owner: 'AE + SE', deliverable: 'POC scope document' },
+          { day: '61-70', action: 'Present POC proposal', owner: 'CP + SE', deliverable: 'POC scope document' },
           { day: '71-80', action: 'Run POC or proof of value', owner: 'SE', deliverable: 'POC results' },
-          { day: '81-90', action: 'Negotiate and close', owner: 'AE', deliverable: 'Agreement signed' }
+          { day: '81-90', action: 'Negotiate and close', owner: 'CP', deliverable: 'Agreement signed' }
         ]}
       };
     }
@@ -473,7 +473,7 @@ AP.PlanGenerator = (function() {
       '      "likelihood": "High|Medium|Low",\n' +
       '      "impact": "High|Medium|Low",\n' +
       '      "mitigation": "3-4 SENTENCES with concrete, Aera-specific mitigation. Reference specific playbooks, proof points, or tactics that ' + sellerName + ' would actually use.",\n' +
-      '      "owner": "Who owns this mitigation — AE, SE, Leadership, etc.",\n' +
+      '      "owner": "Who owns this mitigation — CP, SE, Leadership, etc.",\n' +
       '      "userReported": false\n' +
       '    }\n' +
       '  ],\n' +
