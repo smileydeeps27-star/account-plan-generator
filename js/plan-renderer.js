@@ -25,7 +25,6 @@ AP.PlanRenderer = (function() {
     html += '<div class="plan-header-actions">';
     html += '<button class="btn btn-sm btn-secondary" id="btn-new-plan">&#8592; New Plan</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-save-plan">Save</button>';
-    html += '<button class="btn btn-sm btn-primary" id="btn-meeting-notes">Update from Meeting</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-copy-md">Copy Markdown</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-export-docx">Export Word</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-export-json">Export JSON</button>';
@@ -43,7 +42,8 @@ AP.PlanRenderer = (function() {
       { id: 'value', label: 'Value Hypothesis' },
       { id: 'strategy', label: 'Account Strategy' },
       { id: 'plan', label: '30-60-90 Plan' },
-      { id: 'risks', label: 'Risks & Metrics' }
+      { id: 'risks', label: 'Risks & Metrics' },
+      { id: 'meetingnotes', label: 'Meeting Notes' }
     ];
 
     html += '<div class="plan-tabs">';
@@ -63,6 +63,7 @@ AP.PlanRenderer = (function() {
     html += renderStrategy(plan);
     html += renderDayPlan(plan);
     html += renderRisksMetrics(plan);
+    html += renderMeetingNotes(plan);
 
     container.innerHTML = html;
 
@@ -513,6 +514,45 @@ AP.PlanRenderer = (function() {
     return html;
   }
 
+  // ===== MODULE 11: Meeting Notes =====
+  function renderMeetingNotes(plan) {
+    var notes = plan.meetingNotes || [];
+    var html = '<div id="panel-meetingnotes" class="plan-panel">';
+    html += '<h3 class="section-title">Meeting Notes</h3>';
+    html += '<p class="text-muted mb-16">Record notes from meetings and calls. Notes are saved with the plan for future reference.</p>';
+
+    // Add new note form
+    html += '<div class="meeting-note-form">';
+    html += '<div class="form-group"><label class="form-label" for="note-date-input">Date</label>';
+    html += '<input type="date" id="note-date-input" class="form-input" value="' + new Date().toISOString().split('T')[0] + '" style="max-width:200px;"></div>';
+    html += '<div class="form-group"><label class="form-label" for="note-title-input">Subject / Meeting Title</label>';
+    html += '<input type="text" id="note-title-input" class="form-input" placeholder="e.g. Discovery call with VP Supply Chain"></div>';
+    html += '<div class="form-group"><label class="form-label" for="note-text-input">Notes</label>';
+    html += '<textarea id="note-text-input" class="form-textarea" rows="8" placeholder="Paste or type meeting notes here..."></textarea></div>';
+    html += '<button class="btn btn-primary" id="btn-save-note">Save Note</button>';
+    html += '</div>';
+
+    // Existing notes
+    if (notes.length > 0) {
+      html += '<h4 class="subsection-label mt-32">Saved Notes (' + notes.length + ')</h4>';
+      // Show newest first
+      for (var i = notes.length - 1; i >= 0; i--) {
+        var n = notes[i];
+        html += '<div class="meeting-note-card" data-note-index="' + i + '">';
+        html += '<div class="meeting-note-header">';
+        html += '<div><span class="meeting-note-title">' + e(n.title || 'Untitled') + '</span>';
+        html += '<span class="meeting-note-date">' + e(n.date || '') + '</span></div>';
+        html += '<button class="btn btn-xs btn-secondary meeting-note-delete" data-note-index="' + i + '" style="color:var(--accent-red)">Delete</button>';
+        html += '</div>';
+        html += '<div class="meeting-note-body">' + e(n.text || '').replace(/\n/g, '<br>') + '</div>';
+        html += '</div>';
+      }
+    }
+
+    html += '</div>';
+    return html;
+  }
+
   // ===== Wire Action Buttons =====
   function wireActions(plan) {
     var saveBtn = document.getElementById('btn-save-plan');
@@ -527,18 +567,51 @@ AP.PlanRenderer = (function() {
     var jsonBtn = document.getElementById('btn-export-json');
     if (jsonBtn) jsonBtn.addEventListener('click', function() { AP.PlanPersistence.downloadJSON(plan); });
 
-    // Meeting Notes button
-    var notesBtn = document.getElementById('btn-meeting-notes');
-    if (notesBtn) {
-      notesBtn.addEventListener('click', function() {
-        var modal = document.getElementById('meeting-notes-modal');
-        if (modal) modal.classList.remove('hidden');
-      });
-    }
-
     // New Plan button
     var newBtn = document.getElementById('btn-new-plan');
     if (newBtn) newBtn.addEventListener('click', function() { AP.navigateTo('home'); });
+
+    // Meeting Notes — save
+    var saveNoteBtn = document.getElementById('btn-save-note');
+    if (saveNoteBtn) {
+      saveNoteBtn.addEventListener('click', function() {
+        var dateEl = document.getElementById('note-date-input');
+        var titleEl = document.getElementById('note-title-input');
+        var textEl = document.getElementById('note-text-input');
+        var text = textEl ? textEl.value.trim() : '';
+        if (!text) { AP.showToast('Please enter some notes first.', 'error'); return; }
+
+        if (!plan.meetingNotes) plan.meetingNotes = [];
+        plan.meetingNotes.push({
+          date: dateEl ? dateEl.value : new Date().toISOString().split('T')[0],
+          title: titleEl ? titleEl.value.trim() : '',
+          text: text,
+          addedAt: new Date().toISOString()
+        });
+
+        AP.AppStore.set('currentPlan', plan);
+        AP.showToast('Meeting note saved!');
+        render(plan);
+        // Stay on Meeting Notes tab
+        var mnTab = document.querySelector('.plan-tab[data-tab="meetingnotes"]');
+        if (mnTab) mnTab.click();
+      });
+    }
+
+    // Meeting Notes — delete
+    document.querySelectorAll('.meeting-note-delete').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var idx = parseInt(btn.dataset.noteIndex, 10);
+        if (plan.meetingNotes && plan.meetingNotes[idx] !== undefined) {
+          plan.meetingNotes.splice(idx, 1);
+          AP.AppStore.set('currentPlan', plan);
+          AP.showToast('Note deleted');
+          render(plan);
+          var mnTab = document.querySelector('.plan-tab[data-tab="meetingnotes"]');
+          if (mnTab) mnTab.click();
+        }
+      });
+    });
   }
 
   return { render: render };

@@ -567,6 +567,55 @@
 }
 
 /* ===== Responsive ===== */
+/* ===== Meeting Notes Tab ===== */
+.meeting-note-form {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.meeting-note-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+  transition: border-color 0.2s;
+}
+
+.meeting-note-card:hover {
+  border-color: var(--border-active);
+}
+
+.meeting-note-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.meeting-note-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
+  margin-right: 12px;
+}
+
+.meeting-note-date {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.meeting-note-body {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 768px) {
   .plan-header { flex-direction: column; }
   .plan-header-actions { width: 100%; }
