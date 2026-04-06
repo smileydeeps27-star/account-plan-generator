@@ -283,8 +283,9 @@ AP.PlanGenerator = (function() {
       '\nTop DI Priorities: ' + topPriorities + '\n' + userCtx +
       '\nSearch the web for ACTUAL people at this company. Look for:\n' +
       '- C-suite executives (CEO, CFO, COO, CIO, CTO, CSCO)\n' +
-      '- VP/SVP of Supply Chain, Operations, Digital, IT, Procurement, Finance\n' +
-      '- Any recent leadership changes or appointments\n' +
+      '- Chief Digital Officer (CDO), Chief AI Officer (CAIO), Chief Data Officer, Chief Analytics Officer, Chief Transformation Officer — these new AI/digital leadership roles are increasingly common and highly relevant\n' +
+      '- VP/SVP of Supply Chain, Operations, Digital, IT, Procurement, Finance, AI, Data Science, Digital Transformation\n' +
+      '- Any recent leadership changes or appointments, especially new AI/digital roles\n' +
       '- Direct quotes from earnings calls, interviews, conferences, press releases\n' +
       '- LinkedIn profiles or public appearances\n\n' +
       'Return JSON:\n' +
