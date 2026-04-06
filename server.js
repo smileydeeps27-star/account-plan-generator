@@ -82,9 +82,14 @@ async function callGemini(payload, attempt) {
       });
     });
 
+    apiReq.setTimeout(120000, () => {
+      apiReq.destroy(new Error('Gemini request timed out after 120s'));
+    });
+
     apiReq.on('error', (err) => {
       if (attempt < maxAttempts) {
         const delay = Math.pow(2, attempt) * 1000;
+        console.log(`[Gemini] Error: ${err.message}, retrying in ${delay}ms (attempt ${attempt}/${maxAttempts})`);
         setTimeout(() => {
           callGemini(payload, attempt + 1).then(resolve).catch(reject);
         }, delay);
@@ -228,6 +233,11 @@ const server = http.createServer(async (req, res) => {
     }
   });
 });
+
+// Increase timeouts for long-running Gemini grounding calls
+server.timeout = 300000;         // 5 minutes — total request lifecycle
+server.keepAliveTimeout = 300000;
+server.headersTimeout = 310000;
 
 server.listen(PORT, () => {
   console.log(`Account Plan Generator running on http://localhost:${PORT}`);
