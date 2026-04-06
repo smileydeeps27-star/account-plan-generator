@@ -640,6 +640,148 @@
   white-space: pre-wrap;
 }
 
+/* ===== Action Tracker ===== */
+.action-progress {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.action-progress-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.progress-bar-track {
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent-primary);
+  transition: width 0.4s ease;
+}
+
+.progress-bar-fill.mid { background: #f59e0b; }
+.progress-bar-fill.high { background: #10b981; }
+
+.action-tracker-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.action-tracker-filters .form-select {
+  max-width: 180px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+}
+
+.action-tracker-table .action-status-select {
+  padding: 4px 8px;
+  font-size: 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  width: 110px;
+}
+
+.action-tracker-table .action-due-input {
+  padding: 4px 8px;
+  font-size: 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  max-width: 140px;
+}
+
+.action-text-cell, .action-owner-cell {
+  cursor: text;
+  outline: none;
+  border-radius: 4px;
+  padding: 2px 4px;
+  transition: background 0.2s;
+}
+
+.action-text-cell:focus, .action-owner-cell:focus {
+  background: rgba(255,255,255,0.05);
+  box-shadow: 0 0 0 1px var(--accent-primary);
+}
+
+.action-tracker-row.action-overdue {
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid var(--accent-red);
+}
+
+.action-tracker-row.action-done .action-text-cell {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.action-source-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.action-source-badge.source-plan {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-primary);
+}
+
+.action-source-badge.source-custom {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  color: var(--accent-red);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.action-add-form {
+  display: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.action-add-form.visible {
+  display: block;
+}
+
 @media (max-width: 768px) {
   .plan-header { flex-direction: column; }
   .plan-header-actions { width: 100%; }

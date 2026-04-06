@@ -221,6 +221,21 @@ AP.PlanExport = (function() {
       lines.push('');
     }
 
+    // Action Tracker
+    if (plan.actionTracker && plan.actionTracker.length > 0) {
+      lines.push('### Action Tracker');
+      lines.push('');
+      lines.push('| Status | Action | Owner | Due Date |');
+      lines.push('|--------|--------|-------|----------|');
+      plan.actionTracker.forEach(function(a) {
+        lines.push('| ' + (a.status || '') + ' | ' + (a.action || '') + ' | ' + (a.owner || '') + ' | ' + (a.dueDate || '') + ' |');
+      });
+      var atDone = plan.actionTracker.filter(function(a) { return a.status === 'Done'; }).length;
+      lines.push('');
+      lines.push('**Progress:** ' + atDone + '/' + plan.actionTracker.length + ' complete (' + Math.round(atDone / plan.actionTracker.length * 100) + '%)');
+      lines.push('');
+    }
+
     lines.push('---');
     lines.push('');
 
@@ -265,7 +280,7 @@ AP.PlanExport = (function() {
     return new Promise(function(resolve, reject) {
       if (docxLoaded && window.docx) { resolve(); return; }
       var script = document.createElement('script');
-      script.src = 'https://unpkg.com/docx@9.0.2/build/index.umd.min.js';
+      script.src = 'https://unpkg.com/docx@9.0.2/build/index.umd.js';
       script.onload = function() { docxLoaded = true; resolve(); };
       script.onerror = function() { reject(new Error('Failed to load docx library')); };
       document.head.appendChild(script);
@@ -413,6 +428,15 @@ AP.PlanExport = (function() {
       plan.nextFiveSteps.forEach(function(s, i) {
         para((s.step || (i + 1)) + '. ' + s.action + ' — Owner: ' + (s.owner || '') + ' | By: ' + (s.by || ''));
       });
+    }
+
+    // Action Tracker
+    if (plan.actionTracker && plan.actionTracker.length) {
+      heading('Action Tracker', 1);
+      addTable(['Status', 'Action', 'Owner', 'Due Date'],
+        plan.actionTracker.map(function(a) { return [a.status || '', a.action || '', a.owner || '', a.dueDate || '']; }));
+      var atDone = plan.actionTracker.filter(function(a) { return a.status === 'Done'; }).length;
+      para('Progress: ' + atDone + '/' + plan.actionTracker.length + ' complete (' + Math.round(atDone / plan.actionTracker.length * 100) + '%)');
     }
 
     // Risks

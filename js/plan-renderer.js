@@ -43,6 +43,7 @@ AP.PlanRenderer = (function() {
       { id: 'strategy', label: 'Strategy' },
       { id: 'plan', label: '30-60-90' },
       { id: 'risks', label: 'Risks' },
+      { id: 'actions', label: 'Actions' },
       { id: 'meetingnotes', label: 'Notes' }
     ];
 
@@ -67,6 +68,7 @@ AP.PlanRenderer = (function() {
     html += renderStrategy(plan);
     html += renderDayPlan(plan);
     html += renderRisksMetrics(plan);
+    html += renderActionTracker(plan);
     html += renderMeetingNotes(plan);
 
     container.innerHTML = html;
@@ -534,7 +536,150 @@ AP.PlanRenderer = (function() {
     return html;
   }
 
-  // ===== MODULE 11: Meeting Notes =====
+  // ===== MODULE 11: Action Tracker =====
+  function initActionTracker(plan) {
+    if (plan.actionTracker) return;
+    plan.actionTracker = [];
+    var baseDate = plan.generatedAt ? new Date(plan.generatedAt) : new Date();
+    var idx = 0;
+
+    function addDays(d, n) { var r = new Date(d); r.setDate(r.getDate() + n); return r.toISOString().split('T')[0]; }
+    function parseDayNum(str) {
+      if (!str) return null;
+      var m = String(str).match(/(\d+)/);
+      return m ? parseInt(m[1], 10) : null;
+    }
+
+    var dp = plan.dayPlan || {};
+    ['day30', 'day60', 'day90'].forEach(function(phase) {
+      var data = dp[phase];
+      if (!data || !data.actions) return;
+      data.actions.forEach(function(a) {
+        if (typeof a !== 'object') return;
+        var dayNum = parseDayNum(a.day);
+        plan.actionTracker.push({
+          id: 'at_' + Date.now() + '_' + (idx++),
+          source: phase,
+          action: a.action || '',
+          owner: a.owner || '',
+          dueDate: dayNum ? addDays(baseDate, dayNum) : '',
+          status: 'Not Started',
+          deliverable: a.deliverable || ''
+        });
+      });
+    });
+
+    if (plan.nextFiveSteps && plan.nextFiveSteps.length) {
+      plan.nextFiveSteps.forEach(function(s) {
+        var dayNum = parseDayNum(s.by);
+        plan.actionTracker.push({
+          id: 'at_' + Date.now() + '_' + (idx++),
+          source: 'next5',
+          action: s.action || '',
+          owner: s.owner || '',
+          dueDate: dayNum ? addDays(baseDate, dayNum) : '',
+          status: 'Not Started',
+          deliverable: s.outcome || ''
+        });
+      });
+    }
+    AP.AppStore.set('currentPlan', plan);
+  }
+
+  function renderActionTracker(plan) {
+    initActionTracker(plan);
+    var actions = plan.actionTracker || [];
+    var today = new Date().toISOString().split('T')[0];
+
+    var html = '<div id="panel-actions" class="plan-panel">';
+    html += '<h3 class="section-title">Action Tracker</h3>';
+
+    // Progress
+    var total = actions.length;
+    var done = actions.filter(function(a) { return a.status === 'Done'; }).length;
+    var pct = total > 0 ? Math.round(done / total * 100) : 0;
+    var barClass = pct >= 75 ? 'high' : (pct >= 25 ? 'mid' : '');
+
+    html += '<div class="action-progress">';
+    html += '<div class="action-progress-text">' + done + ' of ' + total + ' actions complete (' + pct + '%)</div>';
+    html += '<div class="progress-bar-track"><div class="progress-bar-fill ' + barClass + '" style="width:' + pct + '%"></div></div>';
+    html += '</div>';
+
+    // Filters + Add button
+    var owners = [];
+    actions.forEach(function(a) { if (a.owner && owners.indexOf(a.owner) === -1) owners.push(a.owner); });
+
+    html += '<div class="action-tracker-filters">';
+    html += '<select id="action-filter-status" class="form-select"><option value="all">All Status</option><option value="Not Started">Not Started</option><option value="In Progress">In Progress</option><option value="Done">Done</option><option value="overdue">Overdue</option></select>';
+    html += '<select id="action-filter-owner" class="form-select"><option value="all">All Owners</option>';
+    owners.forEach(function(o) { html += '<option value="' + e(o) + '">' + e(o) + '</option>'; });
+    html += '</select>';
+    html += '<button class="btn btn-sm btn-primary" id="btn-add-action">+ Add Action</button>';
+    html += '</div>';
+
+    // Add action form (hidden)
+    html += '<div class="action-add-form" id="action-add-form">';
+    html += '<div class="form-group"><label class="form-label">Action</label><input type="text" id="new-action-text" class="form-input" placeholder="What needs to be done?"></div>';
+    html += '<div style="display:flex;gap:12px;flex-wrap:wrap;">';
+    html += '<div class="form-group" style="flex:1;min-width:150px;"><label class="form-label">Owner</label><input type="text" id="new-action-owner" class="form-input" placeholder="Who owns this?"></div>';
+    html += '<div class="form-group" style="flex:1;min-width:150px;"><label class="form-label">Due Date</label><input type="date" id="new-action-date" class="form-input"></div>';
+    html += '</div>';
+    html += '<button class="btn btn-sm btn-primary" id="btn-save-new-action">Save Action</button>';
+    html += '</div>';
+
+    // Action table
+    if (actions.length > 0) {
+      html += '<table class="plan-table action-tracker-table">';
+      html += '<thead><tr><th style="width:130px">Status</th><th>Action</th><th style="width:120px">Owner</th><th style="width:140px">Due Date</th><th style="width:70px">Source</th><th style="width:40px"></th></tr></thead>';
+      html += '<tbody>';
+
+      actions.forEach(function(a) {
+        var overdue = a.dueDate && a.dueDate < today && a.status !== 'Done';
+        var rowClass = 'action-tracker-row';
+        if (overdue) rowClass += ' action-overdue';
+        if (a.status === 'Done') rowClass += ' action-done';
+
+        html += '<tr class="' + rowClass + '" data-action-id="' + a.id + '" data-status="' + e(a.status) + '" data-owner="' + e(a.owner) + '">';
+
+        // Status select
+        html += '<td><select class="action-status-select" data-action-id="' + a.id + '">';
+        ['Not Started', 'In Progress', 'Done'].forEach(function(s) {
+          html += '<option value="' + s + '"' + (a.status === s ? ' selected' : '') + '>' + s + '</option>';
+        });
+        html += '</select></td>';
+
+        // Action text (editable)
+        html += '<td class="action-text-cell" contenteditable="true" data-action-id="' + a.id + '">' + e(a.action) + '</td>';
+
+        // Owner (editable)
+        html += '<td class="action-owner-cell" contenteditable="true" data-action-id="' + a.id + '">' + e(a.owner) + '</td>';
+
+        // Due date
+        html += '<td><input type="date" class="action-due-input" data-action-id="' + a.id + '" value="' + (a.dueDate || '') + '"></td>';
+
+        // Source badge
+        var sourceLabels = { day30: '30', day60: '60', day90: '90', next5: 'N5', custom: '+' };
+        var sourceClass = a.source === 'custom' ? 'source-custom' : 'source-plan';
+        html += '<td><span class="action-source-badge ' + sourceClass + '">' + (sourceLabels[a.source] || a.source) + '</span></td>';
+
+        // Delete (custom only)
+        html += '<td>';
+        if (a.source === 'custom') html += '<button class="btn-icon action-delete-btn" data-action-id="' + a.id + '" title="Delete">&times;</button>';
+        html += '</td>';
+
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+    } else {
+      html += '<p class="text-muted">No actions yet. Actions will be populated from the 30-60-90 plan when generated.</p>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  // ===== MODULE 12: Meeting Notes =====
   function renderMeetingNotes(plan) {
     var notes = plan.meetingNotes || [];
     var html = '<div id="panel-meetingnotes" class="plan-panel">';
@@ -629,6 +774,118 @@ AP.PlanRenderer = (function() {
           render(plan);
           var mnTab = document.querySelector('.plan-tab[data-tab="meetingnotes"]');
           if (mnTab) mnTab.click();
+        }
+      });
+    });
+
+    // ===== Action Tracker Wiring =====
+    function findAction(id) {
+      if (!plan.actionTracker) return null;
+      for (var i = 0; i < plan.actionTracker.length; i++) {
+        if (plan.actionTracker[i].id === id) return plan.actionTracker[i];
+      }
+      return null;
+    }
+
+    function reRenderActions() {
+      AP.AppStore.set('currentPlan', plan);
+      render(plan);
+      var tab = document.querySelector('.plan-tab[data-tab="actions"]');
+      if (tab) tab.click();
+    }
+
+    // Status change
+    document.querySelectorAll('.action-status-select').forEach(function(sel) {
+      sel.addEventListener('change', function() {
+        var a = findAction(sel.dataset.actionId);
+        if (a) { a.status = sel.value; reRenderActions(); }
+      });
+    });
+
+    // Inline edit — action text
+    document.querySelectorAll('.action-text-cell').forEach(function(cell) {
+      cell.addEventListener('blur', function() {
+        var a = findAction(cell.dataset.actionId);
+        if (a) { a.action = cell.textContent.trim(); AP.AppStore.set('currentPlan', plan); }
+      });
+    });
+
+    // Inline edit — owner
+    document.querySelectorAll('.action-owner-cell').forEach(function(cell) {
+      cell.addEventListener('blur', function() {
+        var a = findAction(cell.dataset.actionId);
+        if (a) { a.owner = cell.textContent.trim(); AP.AppStore.set('currentPlan', plan); }
+      });
+    });
+
+    // Due date change
+    document.querySelectorAll('.action-due-input').forEach(function(inp) {
+      inp.addEventListener('change', function() {
+        var a = findAction(inp.dataset.actionId);
+        if (a) { a.dueDate = inp.value; reRenderActions(); }
+      });
+    });
+
+    // Filters
+    var filterStatus = document.getElementById('action-filter-status');
+    var filterOwner = document.getElementById('action-filter-owner');
+    function applyFilters() {
+      var sv = filterStatus ? filterStatus.value : 'all';
+      var ov = filterOwner ? filterOwner.value : 'all';
+      var today = new Date().toISOString().split('T')[0];
+      document.querySelectorAll('.action-tracker-row').forEach(function(row) {
+        var status = row.dataset.status;
+        var owner = row.dataset.owner;
+        var dueDate = row.querySelector('.action-due-input');
+        var isOverdue = dueDate && dueDate.value && dueDate.value < today && status !== 'Done';
+        var showStatus = sv === 'all' || sv === status || (sv === 'overdue' && isOverdue);
+        var showOwner = ov === 'all' || ov === owner;
+        row.style.display = (showStatus && showOwner) ? '' : 'none';
+      });
+    }
+    if (filterStatus) filterStatus.addEventListener('change', applyFilters);
+    if (filterOwner) filterOwner.addEventListener('change', applyFilters);
+
+    // Add action toggle
+    var addBtn = document.getElementById('btn-add-action');
+    var addForm = document.getElementById('action-add-form');
+    if (addBtn && addForm) {
+      addBtn.addEventListener('click', function() {
+        addForm.classList.toggle('visible');
+      });
+    }
+
+    // Save new action
+    var saveNewBtn = document.getElementById('btn-save-new-action');
+    if (saveNewBtn) {
+      saveNewBtn.addEventListener('click', function() {
+        var text = document.getElementById('new-action-text');
+        var owner = document.getElementById('new-action-owner');
+        var date = document.getElementById('new-action-date');
+        if (!text || !text.value.trim()) { AP.showToast('Please enter an action', 'error'); return; }
+        if (!plan.actionTracker) plan.actionTracker = [];
+        plan.actionTracker.push({
+          id: 'at_' + Date.now() + '_custom',
+          source: 'custom',
+          action: text.value.trim(),
+          owner: owner ? owner.value.trim() : '',
+          dueDate: date ? date.value : '',
+          status: 'Not Started',
+          deliverable: ''
+        });
+        AP.showToast('Action added');
+        reRenderActions();
+      });
+    }
+
+    // Delete custom action
+    document.querySelectorAll('.action-delete-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var id = btn.dataset.actionId;
+        if (plan.actionTracker) {
+          plan.actionTracker = plan.actionTracker.filter(function(a) { return a.id !== id; });
+          AP.showToast('Action removed');
+          reRenderActions();
         }
       });
     });
