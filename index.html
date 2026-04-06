@@ -77,6 +77,50 @@
               </div>
             </div>
           </div>
+          <details class="account-context-section">
+            <summary class="account-context-toggle">
+              <span class="account-context-icon">&#9881;</span>
+              <span>
+                <span class="account-context-title">Account Intelligence (Optional)</span>
+                <span class="account-context-subtitle">Add context for a more tailored plan</span>
+              </span>
+              <span class="account-context-chevron">&#9662;</span>
+            </summary>
+            <div class="account-context-body">
+              <div class="form-group">
+                <label class="form-label" for="input-deal-stage">Deal Stage</label>
+                <div class="select-wrapper">
+                  <select id="input-deal-stage" class="form-select">
+                    <option value="">Select stage...</option>
+                    <option value="New/Cold">New/Cold</option>
+                    <option value="Researching">Researching</option>
+                    <option value="Initial Outreach">Initial Outreach</option>
+                    <option value="Discovery">Discovery</option>
+                    <option value="Qualification">Qualification</option>
+                    <option value="POC/Pilot">POC/Pilot</option>
+                    <option value="Negotiation">Negotiation</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="input-context">Account Context</label>
+                <textarea id="input-context" class="form-textarea" rows="3" placeholder="What do you already know about this account? E.g., Met VP Supply Chain at conference, they mentioned interest in demand sensing..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="input-competitors">Suspected Competitors</label>
+                <textarea id="input-competitors" class="form-textarea" rows="3" placeholder="E.g., Kinaxis doing a POC, SAP IBP is incumbent, o9 was evaluated last year..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="input-goals">Goals for Next 90 Days</label>
+                <textarea id="input-goals" class="form-textarea" rows="3" placeholder="E.g., Get executive sponsor, run discovery workshops, present business case..."></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="input-risks">Known Risks or Concerns</label>
+                <textarea id="input-risks" class="form-textarea" rows="3" placeholder="E.g., Budget freeze in Q3, new CTO skeptical of AI vendors, long procurement cycles..."></textarea>
+              </div>
+            </div>
+          </details>
+
           <button type="submit" id="btn-generate" class="btn btn-ai btn-block">
             <span>&#10024;</span> Generate Account Plan
           </button>
@@ -110,6 +154,23 @@
   <main id="screen-plan" class="screen">
     <div class="screen-container" style="max-width:1100px;">
       <div id="plan-container"></div>
+
+      <div id="meeting-notes-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Update Plan from Meeting Notes</h3>
+            <button class="modal-close" id="btn-close-notes">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p class="text-muted">Paste meeting notes or key takeaways to refresh stakeholders, strategy, next steps, and risks.</p>
+            <textarea id="meeting-notes-input" rows="10" placeholder="Paste meeting notes here..."></textarea>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" id="btn-cancel-notes">Cancel</button>
+            <button class="btn btn-primary" id="btn-refresh-plan">&#128260; Refresh Plan</button>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -180,7 +241,9 @@
   <script src="js/utils.js"></script>
   <script src="js/api-client.js"></script>
   <script src="js/seller-profile.js"></script>
+  <script src="js/methodology.js"></script>
   <script src="js/plan-generator.js"></script>
+  <script src="js/plan-refresh.js"></script>
   <script src="js/plan-renderer.js"></script>
   <script src="js/plan-editor.js"></script>
   <script src="js/plan-export.js"></script>

@@ -1,9 +1,10 @@
-/* ===== Account Plan Generator — AI Orchestrator (5 Calls) ===== */
+/* ===== Account Plan Generator — AI Orchestrator (7 Calls) ===== */
 
 AP.PlanGenerator = (function() {
 
+  // ===== JSON Repair Utilities =====
+
   function repairJSON(text) {
-    // Fix unescaped control characters inside strings
     var result = '';
     var inString = false;
     var escaped = false;
@@ -13,26 +14,20 @@ AP.PlanGenerator = (function() {
       if (ch === '\\') { result += ch; escaped = true; continue; }
       if (ch === '"') { inString = !inString; result += ch; continue; }
       if (inString) {
-        // Replace unescaped newlines/tabs inside strings
         if (ch === '\n') { result += '\\n'; continue; }
         if (ch === '\r') { continue; }
         if (ch === '\t') { result += '\\t'; continue; }
       }
       result += ch;
     }
-    // Fix trailing commas before ] or }
     result = result.replace(/,\s*([}\]])/g, '$1');
     return result;
   }
 
   function extractJSON(text) {
-    // String-aware brace matching — braces inside strings don't count
     var start = text.indexOf('{');
     if (start === -1) return null;
-
-    var depth = 0;
-    var inStr = false;
-    var esc = false;
+    var depth = 0, inStr = false, esc = false;
     for (var i = start; i < text.length; i++) {
       var ch = text[i];
       if (esc) { esc = false; continue; }
@@ -42,45 +37,33 @@ AP.PlanGenerator = (function() {
       if (ch === '{') depth++;
       else if (ch === '}') { depth--; if (depth === 0) return text.substring(start, i + 1); }
     }
-    // Unclosed — return from start to end
     return text.substring(start);
   }
 
   function parseJSON(text) {
     if (!text) return null;
-
-    // Strip markdown fences
     var cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-
-    // Direct parse
     try { return JSON.parse(cleaned); } catch (e) { /* continue */ }
 
-    // Extract JSON object with string-aware brace matching
     var jsonStr = extractJSON(cleaned);
     if (!jsonStr) return null;
-
-    // Try direct parse of extracted
     try { return JSON.parse(jsonStr); } catch (e2) { /* continue */ }
 
-    // Repair (fix control chars in strings, trailing commas) and retry
     var repaired = repairJSON(jsonStr);
     var lastError = null;
     try { return JSON.parse(repaired); } catch (e3) {
       lastError = e3;
-      console.error('[PlanGen] Parse failed after repair at:', e3.message);
+      console.error('[PlanGen] Parse failed after repair:', e3.message);
     }
 
-    // Last resort: truncate at the error position and close brackets
     if (lastError) {
       try {
         var posMatch = lastError.message.match(/position (\d+)/);
         if (posMatch) {
           var pos = parseInt(posMatch[1]);
           var truncated = repaired.substring(0, pos);
-          // Remove trailing partial key/value
           truncated = truncated.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*$/, '');
           truncated = truncated.replace(/,\s*$/, '');
-          // Count open brackets/braces (string-aware)
           var opens = 0, braces = 0, tInStr = false, tEsc = false;
           for (var ti = 0; ti < truncated.length; ti++) {
             var tc = truncated[ti];
@@ -95,18 +78,34 @@ AP.PlanGenerator = (function() {
           }
           for (var j = 0; j < opens; j++) truncated += ']';
           for (var k = 0; k < braces; k++) truncated += '}';
-          console.log('[PlanGen] Truncation repair: closing ' + opens + ' arrays, ' + braces + ' objects');
           return JSON.parse(truncated);
         }
       } catch (e4) {
         console.error('[PlanGen] Truncation repair also failed:', e4.message);
       }
     }
-
     console.error('[PlanGen] All parse attempts failed. Text:', cleaned.substring(0, 500));
     return null;
   }
 
+  // ===== Grounded call with retry =====
+  async function groundedCall(systemPrompt, message, maxTokens) {
+    for (var attempt = 1; attempt <= 2; attempt++) {
+      try {
+        var r = await AP.ApiClient.call(systemPrompt, message, { maxTokens: maxTokens || 8192, useGrounding: true });
+        if (!r.text && attempt < 2) { console.log('[PlanGen] Empty grounded response, retrying...'); continue; }
+        var parsed = parseJSON(r.text);
+        if (parsed) return { data: parsed, sources: r.sources || [] };
+        if (attempt < 2) { console.log('[PlanGen] Grounded parse failed, retrying...'); continue; }
+      } catch (err) {
+        console.error('[PlanGen] Grounded call error:', err.message);
+        if (attempt >= 2) throw err;
+      }
+    }
+    return { data: null, sources: [] };
+  }
+
+  // ===== Context helpers =====
   function summaryOf(overview) {
     if (!overview) return '';
     var parts = [];
@@ -120,35 +119,59 @@ AP.PlanGenerator = (function() {
     return parts.join('\n');
   }
 
-  async function generate(companyName, industryHint, revenueHint) {
+  function userInputBlock(userInputs) {
+    if (!userInputs) return '';
+    var lines = [];
+    if (userInputs.dealStage) lines.push('Deal Stage: ' + userInputs.dealStage);
+    if (userInputs.accountContext) lines.push('Account Context: ' + userInputs.accountContext);
+    if (userInputs.suspectedCompetitors) lines.push('Known/Suspected Competitors: ' + userInputs.suspectedCompetitors);
+    if (userInputs.goalsNext90Days) lines.push('Goals for Next 90 Days: ' + userInputs.goalsNext90Days);
+    if (userInputs.knownRisks) lines.push('Known Risks/Concerns: ' + userInputs.knownRisks);
+    if (lines.length === 0) return '';
+    return '\n--- SALES TEAM INTELLIGENCE ---\n' + lines.join('\n') + '\n---\n';
+  }
+
+  // ===== MAIN GENERATE FUNCTION =====
+  async function generate(companyName, industryHint, revenueHint, userInputs) {
     var sellerCtx = AP.SellerProfile.getContextString();
+    var methodologyCtx = AP.Methodology ? AP.Methodology.getContextString() : '';
     var sp = AP.SellerProfile.get() || {};
     var sellerName = sp.companyName || 'Our Company';
+    userInputs = userInputs || {};
 
     var plan = {
       companyName: companyName,
       generatedAt: new Date().toISOString(),
+      userInputs: userInputs,
       overview: null,
       news: [],
+      technologyLandscape: null,
       diPriorities: [],
       stakeholders: [],
       competitive: null,
       valueHypothesis: null,
-      plan: null,
+      accountStrategy: null,
+      dayPlan: null,
+      nextFiveSteps: [],
       risks: [],
-      successMetrics: []
+      successMetrics: [],
+      _sources: []
     };
 
     var companyCtx = 'Company: ' + companyName + '\n';
     if (industryHint) companyCtx += 'Industry: ' + industryHint + '\n';
     if (revenueHint) companyCtx += 'Approximate Revenue: ' + revenueHint + '\n';
 
-    var systemBase = 'You are a world-class B2B enterprise sales strategist at ' + sellerName + '. You have deep knowledge of every major company, their business models, competitive dynamics, financial performance, and technology stacks. Your job is to build account plans that are so insightful they could be presented to a Chief Revenue Officer.\n\nUse your full knowledge of the company — their actual business model, real products, actual market position, known strategic initiatives, and genuine competitive landscape. DO NOT be generic. Be as specific and detailed as if you had just read their latest 10-K filing, investor presentation, and 5 recent analyst reports.\n\nReturn ONLY valid JSON — no markdown fences, no explanation outside the JSON.' + sellerCtx;
+    var userCtx = userInputBlock(userInputs);
 
-    // ===== CALL 1: Account Overview + News (with web grounding) =====
-    AP.EventBus.emit('plan:progress', { current: 1, total: 5, phase: 'Researching ' + companyName + '...' });
+    var systemBase = 'You are a world-class B2B enterprise sales strategist at ' + sellerName + '. You have deep knowledge of every major company. Your job is to build account plans that are so insightful they could be presented to a Chief Revenue Officer.\n\nBe specific, not generic. Reference real business context, actual initiatives, and concrete data.\n\nReturn ONLY valid JSON — no markdown fences, no explanation outside the JSON.' + sellerCtx;
 
-    var call1Message = 'Build a deeply researched account profile for:\n\n' + companyCtx +
+    var TOTAL_STEPS = 7;
+
+    // ===== CALL 1: Account Overview + News (grounded) =====
+    AP.EventBus.emit('plan:progress', { current: 1, total: TOTAL_STEPS, phase: 'Researching ' + companyName + '...' });
+
+    var call1Msg = 'Build a deeply researched account profile for:\n\n' + companyCtx +
       '\nSearch the web for the latest information about this company. Use real, current data.\n\n' +
       'Return JSON:\n' +
       '{\n' +
@@ -156,256 +179,328 @@ AP.PlanGenerator = (function() {
       '    "industry": "Their specific industry/vertical",\n' +
       '    "hqLocation": "City, Country",\n' +
       '    "annualRevenue": "Latest reported revenue with currency and fiscal year",\n' +
-      '    "employeeCount": "Approximate headcount with context",\n' +
+      '    "employeeCount": "Approximate headcount",\n' +
       '    "ticker": "Stock ticker(s) if public, or Private",\n' +
       '    "website": "company domain",\n' +
-      '    "businessGroups": [\n' +
-      '      {"name": "Division/Segment name", "description": "Key brands/products and what it does", "revenueShare": "Percentage of total revenue if known"}\n' +
-      '    ],\n' +
+      '    "businessGroups": [{"name": "Division name", "description": "What it does", "revenueShare": "% of total"}],\n' +
       '    "financialSnapshot": [\n' +
-      '      {"metric": "Revenue/Turnover", "currentYear": "FY value", "priorYear": "FY value", "notes": "Growth rate or context"},\n' +
-      '      {"metric": "Operating Margin", "currentYear": "X%", "priorYear": "Y%", "notes": "Trend"},\n' +
-      '      {"metric": "Operating Profit", "currentYear": "value", "priorYear": "value", "notes": "Growth"},\n' +
-      '      {"metric": "Volume/Sales Growth", "currentYear": "X%", "priorYear": "Y%", "notes": "Organic vs total"}\n' +
+      '      {"metric": "Revenue", "currentYear": "FY value", "priorYear": "FY value", "notes": "Growth rate"},\n' +
+      '      {"metric": "Operating Profit", "currentYear": "value", "priorYear": "value", "notes": "Trend"}\n' +
       '    ],\n' +
-      '    "strategicPriorities": ["Priority 1 — brief description", "Priority 2 — brief description", "Priority 3", "Priority 4"],\n' +
-      '    "technologyLandscape": "2-3 sentences about their digital/AI/tech strategy and investments"\n' +
+      '    "strategicPriorities": ["Priority 1 — brief description", "Priority 2"]\n' +
       '  },\n' +
       '  "news": [\n' +
-      '    {"date": "Mon YYYY or specific date", "headline": "Detailed, specific headline", "detail": "2-3 sentences explaining what happened and why it matters", "source": "Publication name", "relevanceTag": "Supply Chain|AI/Digital|Leadership|M&A|Financial|Strategy"}\n' +
+      '    {"date": "Mon YYYY", "headline": "Specific headline", "detail": "2-3 sentences", "source": "Publication", "relevanceTag": "Supply Chain|AI/Digital|Leadership|M&A|Financial|Strategy"}\n' +
       '  ]\n' +
       '}\n\n' +
-      'CRITICAL:\n' +
-      '- Use REAL data from the web. Include actual financial figures, real executive names, genuine strategic initiatives.\n' +
-      '- Include 5-7 news items that are recent and relevant to a ' + sellerName + ' sales engagement.\n' +
-      '- Financial snapshot should have 4-6 rows with real numbers.\n' +
-      '- Business groups should reflect their actual organizational structure.\n' +
-      '- Strategic priorities should be specific and named (e.g., "Growth Action Plan" not just "growth").';
+      'CRITICAL: Use REAL data. Include 5-7 news items, 4-6 financial rows, real business groups, specific strategic priorities.';
 
-    // Call 1 with retry (grounded calls can return empty text)
-    for (var attempt1 = 1; attempt1 <= 2; attempt1++) {
-      try {
-        var r1 = await AP.ApiClient.call(systemBase, call1Message, { maxTokens: 8192, useGrounding: true });
-        console.log('[PlanGen] Call 1 attempt ' + attempt1 + ', text length:', r1.text ? r1.text.length : 0);
-        if (!r1.text && attempt1 < 2) {
-          console.log('[PlanGen] Call 1 empty response, retrying...');
-          continue;
-        }
-        var p1 = parseJSON(r1.text);
-        if (p1) {
-          plan.overview = p1.overview || null;
-          plan.news = p1.news || [];
-          if (r1.sources && r1.sources.length) {
-            plan._sources = r1.sources;
-          }
-          console.log('[PlanGen] Call 1 parsed successfully, overview keys:', plan.overview ? Object.keys(plan.overview) : 'null');
-          break;
-        } else if (attempt1 < 2) {
-          console.log('[PlanGen] Call 1 parse failed, retrying...');
-        } else {
-          console.error('[PlanGen] Call 1 parsed to null after retries');
-        }
-      } catch (err) {
-        console.error('[PlanGen] Call 1 error:', err.message);
-        if (attempt1 >= 2) {
-          plan.overview = { industry: industryHint || '', hqLocation: '', annualRevenue: revenueHint || 'N/A', employeeCount: 'N/A', businessGroups: [], financialSnapshot: [], strategicPriorities: [], technologyLandscape: 'Research failed: ' + err.message };
-        }
+    try {
+      var r1 = await groundedCall(systemBase, call1Msg, 8192);
+      if (r1.data) {
+        plan.overview = r1.data.overview || null;
+        plan.news = r1.data.news || [];
+        if (r1.sources.length) plan._sources = r1.sources;
       }
+    } catch (err) {
+      console.error('[PlanGen] Call 1 failed:', err.message);
+      plan.overview = { industry: industryHint || '', hqLocation: '', annualRevenue: revenueHint || 'N/A', employeeCount: 'N/A', businessGroups: [], financialSnapshot: [], strategicPriorities: [] };
     }
-
-    // ===== CALL 2: Decision Intelligence Priorities + Competitive =====
-    AP.EventBus.emit('plan:progress', { current: 2, total: 5, phase: 'Analyzing opportunities & competitive landscape...' });
 
     var overviewContext = summaryOf(plan.overview);
     var newsContext = plan.news.length > 0 ? '\nRecent News:\n' + plan.news.slice(0, 5).map(function(n) { return '- ' + n.headline; }).join('\n') : '';
 
-    var call2Message = 'Analyze decision intelligence opportunities and competitive positioning for:\n\n' + companyCtx +
-      overviewContext + '\n' +
-      (plan.overview && plan.overview.technologyLandscape ? 'Tech Landscape: ' + plan.overview.technologyLandscape + '\n' : '') +
-      newsContext +
+    // ===== CALL 2: Technology Landscape (grounded) =====
+    AP.EventBus.emit('plan:progress', { current: 2, total: TOTAL_STEPS, phase: 'Researching technology stack...' });
+
+    var call2Msg = 'Research the technology stack and digital landscape of:\n\n' + companyCtx + overviewContext + '\n\n' +
+      'Search for this company as a CUSTOMER of technology vendors. Look for:\n' +
+      '- ERP systems (SAP, Oracle, Microsoft Dynamics, etc.) — check vendor customer pages, case studies, press releases\n' +
+      '- Supply chain / planning tools (Blue Yonder, Kinaxis, o9, SAP IBP, etc.)\n' +
+      '- Cloud platform (AWS, Azure, GCP)\n' +
+      '- CRM (Salesforce, etc.)\n' +
+      '- AI/ML investments and digital transformation initiatives\n' +
+      '- Any publicly known technology partnerships or implementations\n\n' +
+      'Return JSON:\n' +
+      '{\n' +
+      '  "technologyLandscape": {\n' +
+      '    "knownSystems": [\n' +
+      '      {"category": "ERP|Planning|CRM|Cloud|Analytics|AI/ML|Other", "vendor": "Vendor Name", "product": "Specific product if known", "evidence": "Where this was found — be specific", "confidence": "Confirmed|Likely|Rumored"}\n' +
+      '    ],\n' +
+      '    "digitalStrategy": "3-4 sentences about their digital transformation strategy and AI investments",\n' +
+      '    "itLeadership": "Key CIO/CTO/CDO if findable",\n' +
+      '    "techBudget": "Any known IT spending data"\n' +
+      '  }\n' +
+      '}\n\n' +
+      'CRITICAL: Only report systems you find EVIDENCE for. Mark confidence level honestly. Do NOT guess or hallucinate vendor relationships.';
+
+    try {
+      var r2 = await groundedCall(systemBase, call2Msg, 4096);
+      if (r2.data) {
+        plan.technologyLandscape = r2.data.technologyLandscape || null;
+        if (r2.sources.length) plan._sources = plan._sources.concat(r2.sources);
+      }
+    } catch (err) { console.error('[PlanGen] Call 2 (tech) error:', err.message); }
+
+    var techContext = '';
+    if (plan.technologyLandscape && plan.technologyLandscape.knownSystems) {
+      techContext = '\nKnown Tech Stack:\n' + plan.technologyLandscape.knownSystems.map(function(s) {
+        return '- ' + s.category + ': ' + s.vendor + (s.product ? ' ' + s.product : '') + ' (' + s.confidence + ')';
+      }).join('\n');
+    }
+
+    // ===== CALL 3: DI Priorities (jsonMode) =====
+    AP.EventBus.emit('plan:progress', { current: 3, total: TOTAL_STEPS, phase: 'Analyzing decision intelligence opportunities...' });
+
+    var call3Msg = 'Analyze decision intelligence opportunities for:\n\n' + companyCtx +
+      overviewContext + techContext + newsContext + userCtx +
       '\n\nReturn JSON:\n' +
       '{\n' +
       '  "diPriorities": [\n' +
       '    {\n' +
       '      "rank": 1,\n' +
       '      "area": "Priority area name (e.g., Supply Chain Decision Intelligence)",\n' +
-      '      "context": "3-4 SENTENCES about this company\'s specific situation, challenges, and why this is a priority. Reference their actual operations, scale, and recent initiatives.",\n' +
-      '      "sellerValueProp": "2-3 SENTENCES about how ' + sellerName + '\'s specific capabilities address this. Reference actual Skills/products by name.",\n' +
-      '      "estimatedImpact": "Dollar or percentage estimate scaled to this company\'s revenue (e.g., $200-500M annually)",\n' +
+      '      "context": "3-4 SENTENCES about THIS company\'s specific situation and why this is a priority. Reference their actual operations and scale.",\n' +
+      '      "sellerValueProp": "2-3 SENTENCES about how ' + sellerName + ' addresses this. Reference specific Aera Skills/capabilities.",\n' +
+      '      "estimatedImpact": "Dollar or percentage estimate scaled to this company\'s revenue",\n' +
       '      "urgency": "HIGHEST|High|Medium"\n' +
       '    }\n' +
-      '  ],\n' +
-      '  "competitive": {\n' +
-      '    "positioning": "3-4 SENTENCES: How ' + sellerName + ' should position against incumbents for THIS account",\n' +
-      '    "landscape": [\n' +
-      '      {"competitor": "Competitor Name", "weakness": "2-3 SENTENCES about their weakness for THIS account", "sellerAdvantage": "2-3 SENTENCES about ' + sellerName + '\'s advantage"}\n' +
-      '    ]\n' +
-      '  }\n' +
-      '}\n\n' +
-      'Generate 5 DI priorities ranked by importance (first = HIGHEST). Each must be specific to this company.\n' +
-      'Generate 4-6 competitors in the landscape. Include both direct competitors and existing vendors they may need to displace.';
+      '  ]\n' +
+      '}\n\nGenerate 5 DI priorities ranked by importance. Each must be specific to this company, not generic.';
 
     try {
-      var r2 = await AP.ApiClient.call(systemBase, call2Message, { maxTokens: 8192, jsonMode: true });
-      var p2 = parseJSON(r2.text);
-      if (p2) {
-        plan.diPriorities = p2.diPriorities || [];
-        plan.competitive = p2.competitive || null;
-      }
-    } catch (err) { console.error('[PlanGen] Call 2 error:', err.message); }
+      var r3 = await AP.ApiClient.call(systemBase, call3Msg, { maxTokens: 8192, jsonMode: true });
+      var p3 = parseJSON(r3.text);
+      if (p3) plan.diPriorities = p3.diPriorities || [];
+    } catch (err) { console.error('[PlanGen] Call 3 error:', err.message); }
 
-    // ===== CALL 3: Stakeholders + Value Hypothesis =====
-    AP.EventBus.emit('plan:progress', { current: 3, total: 5, phase: 'Mapping stakeholders & building value case...' });
+    // ===== CALL 4: Stakeholders (grounded for real people) =====
+    AP.EventBus.emit('plan:progress', { current: 4, total: TOTAL_STEPS, phase: 'Researching real stakeholders...' });
 
-    var topPriorities = plan.diPriorities.slice(0, 3).map(function(p) { return p.area + ' (' + p.estimatedImpact + ')'; }).join('; ');
+    var topPriorities = plan.diPriorities.slice(0, 3).map(function(p) { return p.area; }).join('; ');
 
-    var call3Message = 'Build stakeholder map and value hypothesis for selling ' + sellerName + ' to:\n\n' + companyCtx +
-      overviewContext + '\n' +
-      'Top DI Priorities: ' + topPriorities + '\n' +
-      (plan.competitive ? 'Positioning: ' + (plan.competitive.positioning || '').substring(0, 200) + '\n' : '') +
-      '\nReturn JSON:\n' +
+    var call4Msg = 'Research and identify REAL executives and leaders at:\n\n' + companyCtx + overviewContext +
+      '\nTop DI Priorities: ' + topPriorities + '\n' + userCtx +
+      '\nSearch the web for ACTUAL people at this company. Look for:\n' +
+      '- C-suite executives (CEO, CFO, COO, CIO, CTO, CSCO)\n' +
+      '- VP/SVP of Supply Chain, Operations, Digital, IT, Procurement, Finance\n' +
+      '- Any recent leadership changes or appointments\n' +
+      '- Direct quotes from earnings calls, interviews, conferences, press releases\n' +
+      '- LinkedIn profiles or public appearances\n\n' +
+      'Return JSON:\n' +
       '{\n' +
       '  "stakeholders": [\n' +
       '    {\n' +
-      '      "name": "Full Name (use REAL executives if you know them, otherwise realistic titles)",\n' +
-      '      "title": "Job Title",\n' +
-      '      "roleInDeal": "Executive Sponsor|Champion|Evaluator|Influencer|Blocker",\n' +
+      '      "name": "REAL Full Name — only include people you found in search results",\n' +
+      '      "title": "Their actual job title",\n' +
+      '      "roleInDeal": "Executive Sponsor|Champion|Evaluator|Influencer|Gatekeeper",\n' +
       '      "relevance": "High|Medium",\n' +
-      '      "notes": "2-3 SENTENCES: why they matter, what they care about",\n' +
-      '      "engagementStrategy": "2-3 SENTENCES: specific approach to engage this persona — what messaging, what proof points, what format",\n' +
-      '      "linkedin": "https://linkedin.com/in/plausible-slug"\n' +
+      '      "notes": "2-3 SENTENCES: why they matter for a ' + sellerName + ' deal, what they care about",\n' +
+      '      "engagementStrategy": "3-4 SPECIFIC SENTENCES: exactly how to approach this person — what message, what proof point, what format (email/LinkedIn/exec briefing/conference), what to reference from their public statements",\n' +
+      '      "publicQuotes": [\n' +
+      '        {"quote": "Direct quote or paraphrase from a real source", "source": "Where this was said — earnings call, interview, conference", "date": "When"}\n' +
+      '      ],\n' +
+      '      "confidence": "Verified|Likely"\n' +
       '    }\n' +
-      '  ],\n' +
-      '  "valueHypothesis": {\n' +
-      '    "metrics": [\n' +
-      '      {"metric": "Specific business improvement", "impact": "Dollar value scaled to this company", "confidence": "High|Medium|Low"}\n' +
-      '    ],\n' +
-      '    "executivePitch": "3-4 POWERFUL SENTENCES an AE could use verbatim in an email to the CEO/COO. Reference their specific strategic priorities and quantified value."\n' +
-      '  }\n' +
+      '  ]\n' +
       '}\n\n' +
-      'Generate 5-7 stakeholders with engagement strategies. Generate 4-6 value metrics.\n' +
-      'Use REAL executive names where known. Include engagement strategy per persona.';
+      'CRITICAL RULES:\n' +
+      '- ONLY include people you found in search results. Do NOT invent names.\n' +
+      '- If you cannot find a real person for a critical role, use: {"name": "Role to be identified", "title": "VP Supply Chain (target)", "confidence": "Unverified"}\n' +
+      '- Include real quotes where available. If no quote found, omit the publicQuotes array for that person.\n' +
+      '- Engagement strategy must be SPECIFIC: reference their actual background, quotes, and specific Aera capabilities.\n' +
+      '- Target 5-8 stakeholders.';
 
     try {
-      var r3 = await AP.ApiClient.call(systemBase, call3Message, { maxTokens: 8192, jsonMode: true });
-      var p3 = parseJSON(r3.text);
-      if (p3) {
-        plan.stakeholders = p3.stakeholders || [];
-        plan.valueHypothesis = p3.valueHypothesis || null;
+      var r4 = await groundedCall(systemBase, call4Msg, 8192);
+      if (r4.data) {
+        plan.stakeholders = r4.data.stakeholders || [];
+        if (r4.sources.length) plan._sources = plan._sources.concat(r4.sources);
       }
-    } catch (err) { console.error('[PlanGen] Call 3 error:', err.message); }
+    } catch (err) { console.error('[PlanGen] Call 4 (stakeholders) error:', err.message); }
 
-    // ===== CALL 4: 10-30-60 Day Plan =====
-    AP.EventBus.emit('plan:progress', { current: 4, total: 5, phase: 'Building engagement plan...' });
+    // ===== CALL 5: Competitive + Value Hypothesis (jsonMode, uses user input) =====
+    AP.EventBus.emit('plan:progress', { current: 5, total: TOTAL_STEPS, phase: 'Competitive analysis & value case...' });
 
-    var stakeholderNames = plan.stakeholders.slice(0, 5).map(function(s) { return s.name + ' (' + s.title + ', ' + s.roleInDeal + ')'; }).join('\n- ');
+    var stakeholderNames = plan.stakeholders.slice(0, 5).map(function(s) { return s.name + ' (' + s.title + ')'; }).join(', ');
 
-    var call4Message = 'Create a detailed 10-30-60 day engagement plan for ' + sellerName + ' to sell into:\n\n' + companyCtx +
-      'Top Priorities:\n' + plan.diPriorities.slice(0, 3).map(function(p, i) { return (i + 1) + '. ' + p.area; }).join('\n') + '\n' +
-      'Key Stakeholders:\n- ' + stakeholderNames + '\n' +
-      (plan.valueHypothesis && plan.valueHypothesis.executivePitch ? 'Value Pitch: ' + plan.valueHypothesis.executivePitch + '\n' : '') +
-      '\nReturn JSON:\n' +
+    var competitorInput = '';
+    if (userInputs.suspectedCompetitors) {
+      competitorInput = '\n\nIMPORTANT — The sales team reports these competitors are present at this account:\n' +
+        userInputs.suspectedCompetitors + '\n' +
+        'You MUST address each of these competitors specifically. Mark them as "userReported": true in the output.\n' +
+        'You may also add additional competitors you identify through analysis.';
+    }
+
+    var call5Msg = 'Build competitive analysis and value hypothesis for selling ' + sellerName + ' to:\n\n' + companyCtx +
+      overviewContext + techContext + '\nKey Stakeholders: ' + stakeholderNames + '\n' +
+      'Top DI Priorities: ' + topPriorities + '\n' + userCtx + competitorInput +
+      '\n\nReturn JSON:\n' +
       '{\n' +
-      '  "plan": {\n' +
-      '    "day10": {\n' +
-      '      "title": "Foundation & Intelligence Gathering",\n' +
-      '      "actions": [\n' +
-      '        {"day": "1-2", "action": "Specific action with stakeholder names", "owner": "AE|SE|Marketing|AE + SE", "deliverable": "What is produced"}\n' +
-      '      ]\n' +
-      '    },\n' +
+      '  "competitive": {\n' +
+      '    "positioning": "4-5 SENTENCES: How ' + sellerName + ' should position for THIS account. Reference their tech stack, pain points, and competitive dynamics.",\n' +
+      '    "landscape": [\n' +
+      '      {"competitor": "Competitor Name", "presence": "Incumbent|Evaluating|Rumored|Potential Threat", "weakness": "2-3 SENTENCES about their weakness for THIS account", "sellerAdvantage": "2-3 SENTENCES about ' + sellerName + ' advantage", "battleCard": "1-2 sentence talk track for an AE", "userReported": false}\n' +
+      '    ]\n' +
+      '  },\n' +
+      '  "valueHypothesis": {\n' +
+      '    "executivePitch": "4-5 POWERFUL SENTENCES an AE could use verbatim to a CEO/COO. Reference their specific priorities, name specific numbers.",\n' +
+      '    "metrics": [\n' +
+      '      {"metric": "Specific business improvement", "impact": "Dollar value scaled to this company", "confidence": "High|Medium|Low", "basis": "How this was estimated"}\n' +
+      '    ],\n' +
+      '    "whyNow": "2-3 SENTENCES about urgency — why they should act now rather than next year"\n' +
+      '  }\n' +
+      '}\n\nGenerate 4-6 competitors. Generate 4-6 value metrics.';
+
+    try {
+      var r5 = await AP.ApiClient.call(systemBase, call5Msg, { maxTokens: 8192, jsonMode: true });
+      var p5 = parseJSON(r5.text);
+      if (p5) {
+        plan.competitive = p5.competitive || null;
+        plan.valueHypothesis = p5.valueHypothesis || null;
+      }
+    } catch (err) { console.error('[PlanGen] Call 5 error:', err.message); }
+
+    // ===== CALL 6: Account Strategy + 30-60-90 Plan + Next 5 Steps (jsonMode, uses user inputs + methodology) =====
+    AP.EventBus.emit('plan:progress', { current: 6, total: TOTAL_STEPS, phase: 'Building strategy & engagement plan...' });
+
+    var strategyInputs = '';
+    if (userInputs.goalsNext90Days) strategyInputs += '\nSales Team Goals (Next 90 Days): ' + userInputs.goalsNext90Days;
+    if (userInputs.accountContext) strategyInputs += '\nAccount Context: ' + userInputs.accountContext;
+    if (userInputs.dealStage) strategyInputs += '\nCurrent Deal Stage: ' + userInputs.dealStage;
+
+    var call6Msg = 'Create account strategy, 30-60-90 day plan, and next steps for ' + sellerName + ' selling into:\n\n' + companyCtx +
+      overviewContext + '\n' +
+      'Top DI Priorities: ' + topPriorities + '\n' +
+      'Key Stakeholders: ' + stakeholderNames + '\n' +
+      (plan.valueHypothesis && plan.valueHypothesis.executivePitch ? 'Value Pitch: ' + plan.valueHypothesis.executivePitch + '\n' : '') +
+      (plan.competitive && plan.competitive.positioning ? 'Competitive Positioning: ' + plan.competitive.positioning + '\n' : '') +
+      strategyInputs + userCtx +
+      '\n' + methodologyCtx +
+      '\n\nReturn JSON:\n' +
+      '{\n' +
+      '  "accountStrategy": {\n' +
+      '    "positioning": "3-4 SENTENCES: What we are positioning and the overall deal narrative",\n' +
+      '    "whyAera": "3-4 SENTENCES: Why Aera specifically — tied to THIS company\'s situation, tech stack, and priorities",\n' +
+      '    "whyNow": "2-3 SENTENCES: Urgency drivers — why act now, what happens if they delay",\n' +
+      '    "keyMessages": ["Message 1 — concise talk track", "Message 2", "Message 3"],\n' +
+      '    "landingZone": "2-3 SENTENCES: The ideal first use case / entry point for Aera at this account"\n' +
+      '  },\n' +
+      '  "dayPlan": {\n' +
       '    "day30": {\n' +
-      '      "title": "Multi-Touch Outreach & Discovery",\n' +
-      '      "actions": [\n' +
-      '        {"day": "11-15", "action": "Specific action", "owner": "Role", "deliverable": "Output"}\n' +
-      '      ]\n' +
+      '      "title": "Phase title",\n' +
+      '      "whatGoodLooksLike": "2-3 SENTENCES describing success criteria at day 30",\n' +
+      '      "actions": [{"day": "1-5", "action": "Specific action with stakeholder names", "owner": "AE|SE|Marketing|AE + SE", "deliverable": "What is produced"}]\n' +
       '    },\n' +
       '    "day60": {\n' +
-      '      "title": "Qualification & Value Demonstration",\n' +
-      '      "actions": [\n' +
-      '        {"day": "31-35", "action": "Specific action", "owner": "Role", "deliverable": "Output"}\n' +
-      '      ]\n' +
+      '      "title": "Phase title",\n' +
+      '      "whatGoodLooksLike": "2-3 SENTENCES describing success at day 60",\n' +
+      '      "actions": [{"day": "31-35", "action": "Specific action", "owner": "Role", "deliverable": "Output"}]\n' +
+      '    },\n' +
+      '    "day90": {\n' +
+      '      "title": "Phase title",\n' +
+      '      "whatGoodLooksLike": "2-3 SENTENCES describing success at day 90",\n' +
+      '      "actions": [{"day": "61-70", "action": "Specific action", "owner": "Role", "deliverable": "Output"}]\n' +
       '    }\n' +
-      '  }\n' +
+      '  },\n' +
+      '  "nextFiveSteps": [\n' +
+      '    {"step": 1, "action": "Immediate next action — be very specific", "owner": "Who does this", "by": "Target date or timeframe", "outcome": "Expected result"}\n' +
+      '  ]\n' +
       '}\n\n' +
-      'Each phase should have 5-7 actions. Reference specific stakeholder names, ' + sellerName + ' Skills, and concrete deliverables.\n' +
-      'Frame as: Land (Day 10) → Expand (Day 30) → Platform (Day 60).';
+      'CRITICAL:\n' +
+      '- Each phase should have 5-7 actions. Reference specific stakeholder names and ' + sellerName + ' capabilities.\n' +
+      '- "What Good Looks Like" must be concrete and measurable.\n' +
+      '- Next 5 Steps are the IMMEDIATE actions after this plan is created — very tactical, very specific.\n' +
+      '- Align to the Aera Way sales methodology milestones if provided above.\n' +
+      '- If user provided 90-day goals, ensure the plan directly addresses those goals.';
 
     try {
-      var r4 = await AP.ApiClient.call(systemBase, call4Message, { maxTokens: 6144, jsonMode: true });
-      var p4 = parseJSON(r4.text);
-      if (p4 && p4.plan) plan.plan = p4.plan;
-    } catch (err) { console.error('[PlanGen] Call 4 error:', err.message); }
+      var r6 = await AP.ApiClient.call(systemBase, call6Msg, { maxTokens: 10240, jsonMode: true });
+      var p6 = parseJSON(r6.text);
+      if (p6) {
+        plan.accountStrategy = p6.accountStrategy || null;
+        plan.dayPlan = p6.dayPlan || null;
+        plan.nextFiveSteps = p6.nextFiveSteps || [];
+      }
+    } catch (err) { console.error('[PlanGen] Call 6 error:', err.message); }
 
-    if (!plan.plan) {
-      plan.plan = {
-        day10: { title: 'Foundation & Intelligence Gathering', actions: [
-          { day: '1-2', action: 'Finalize account plan and validate org structure', owner: 'AE', deliverable: 'Completed account plan' },
-          { day: '3-5', action: 'Research existing tech ecosystem and AI investments', owner: 'SE', deliverable: 'Tech landscape brief' },
-          { day: '6-8', action: 'Map mutual connections for warm introductions', owner: 'AE', deliverable: 'Connection map' },
-          { day: '9-10', action: 'Prepare personalized outreach sequences', owner: 'AE + Marketing', deliverable: 'Outreach drafts' }
+    // Fallback day plan
+    if (!plan.dayPlan) {
+      plan.dayPlan = {
+        day30: { title: 'Research & Outreach', whatGoodLooksLike: 'Champion identified and first discovery meeting completed.', actions: [
+          { day: '1-5', action: 'Finalize account plan and validate org structure', owner: 'AE', deliverable: 'Completed account plan' },
+          { day: '6-15', action: 'Multi-channel outreach to key stakeholders', owner: 'AE', deliverable: 'First meeting booked' },
+          { day: '16-30', action: 'Conduct discovery and qualify opportunity', owner: 'AE + SE', deliverable: 'Discovery notes and qualification' }
         ]},
-        day30: { title: 'Multi-Touch Outreach & Discovery', actions: [
-          { day: '11-15', action: 'Launch LinkedIn outreach to key stakeholders', owner: 'AE', deliverable: 'Connection requests sent' },
-          { day: '16-20', action: 'Send targeted thought leadership content', owner: 'Marketing', deliverable: 'Content delivered' },
-          { day: '21-25', action: 'Secure first discovery call', owner: 'AE', deliverable: 'Meeting scheduled' },
-          { day: '26-30', action: 'Debrief and refine value hypothesis', owner: 'AE + SE', deliverable: 'Updated value prop' }
+        day60: { title: 'Discovery & Value Demonstration', whatGoodLooksLike: 'Business case presented, 3+ stakeholders engaged.', actions: [
+          { day: '31-40', action: 'Deliver tailored workshop or demo', owner: 'SE', deliverable: 'Workshop completed' },
+          { day: '41-50', action: 'Build business case with account-specific data', owner: 'AE + Value Engineering', deliverable: 'Business case document' },
+          { day: '51-60', action: 'Secure executive sponsor alignment', owner: 'AE', deliverable: 'Executive meeting' }
         ]},
-        day60: { title: 'Qualification & Value Demonstration', actions: [
-          { day: '31-40', action: 'Deliver tailored demo/workshop', owner: 'SE + AE', deliverable: 'Demo delivered' },
-          { day: '41-50', action: 'Develop business case with company-specific data', owner: 'AE + Value Engineering', deliverable: 'Business case doc' },
-          { day: '51-55', action: 'Present POC proposal to leadership', owner: 'AE', deliverable: 'POC proposal' },
-          { day: '56-60', action: 'Secure POC agreement and next steps', owner: 'AE', deliverable: 'Signed POC' }
+        day90: { title: 'Qualification & Commitment', whatGoodLooksLike: 'POC/pilot agreed, commercial terms in discussion.', actions: [
+          { day: '61-70', action: 'Present POC proposal', owner: 'AE + SE', deliverable: 'POC scope document' },
+          { day: '71-80', action: 'Run POC or proof of value', owner: 'SE', deliverable: 'POC results' },
+          { day: '81-90', action: 'Negotiate and close', owner: 'AE', deliverable: 'Agreement signed' }
         ]}
       };
     }
 
-    // ===== CALL 5: Risks + Success Metrics =====
-    AP.EventBus.emit('plan:progress', { current: 5, total: 5, phase: 'Assessing risks & defining success metrics...' });
+    // ===== CALL 7: Risks + Success Metrics (jsonMode, uses user input + methodology) =====
+    AP.EventBus.emit('plan:progress', { current: 7, total: TOTAL_STEPS, phase: 'Assessing risks & defining success metrics...' });
 
-    var call5Message = 'Create risk assessment and success metrics for selling ' + sellerName + ' to:\n\n' + companyCtx +
+    var riskInput = '';
+    if (userInputs.knownRisks) {
+      riskInput = '\n\nIMPORTANT — The sales team has flagged these specific risks/concerns:\n' +
+        userInputs.knownRisks + '\n' +
+        'You MUST address EACH of these with Aera-specific mitigations. Mark them as "userReported": true.';
+    }
+
+    var call7Msg = 'Create risk assessment and success metrics for selling ' + sellerName + ' to:\n\n' + companyCtx +
       overviewContext + '\n' +
+      'Deal Stage: ' + (userInputs.dealStage || 'New') + '\n' +
       'Top Priorities: ' + topPriorities + '\n' +
-      'Stakeholders: ' + plan.stakeholders.slice(0, 3).map(function(s) { return s.name + ' (' + s.title + ')'; }).join(', ') + '\n' +
-      '\nReturn JSON:\n' +
+      'Key Stakeholders: ' + stakeholderNames + '\n' +
+      (plan.competitive ? 'Competitive Situation: ' + (plan.competitive.positioning || '').substring(0, 300) + '\n' : '') +
+      riskInput + userCtx +
+      '\n' + methodologyCtx +
+      '\n\nReturn JSON:\n' +
       '{\n' +
       '  "risks": [\n' +
-      '    {"risk": "Specific risk for THIS deal", "likelihood": "High|Medium|Low", "impact": "High|Medium|Low", "mitigation": "2-3 SENTENCES with concrete, actionable mitigation steps"}\n' +
+      '    {\n' +
+      '      "risk": "Specific risk for THIS deal — not generic",\n' +
+      '      "category": "Organizational|Technical|Competitive|Commercial|Timeline",\n' +
+      '      "likelihood": "High|Medium|Low",\n' +
+      '      "impact": "High|Medium|Low",\n' +
+      '      "mitigation": "3-4 SENTENCES with concrete, Aera-specific mitigation. Reference specific playbooks, proof points, or tactics that ' + sellerName + ' would actually use.",\n' +
+      '      "owner": "Who owns this mitigation — AE, SE, Leadership, etc.",\n' +
+      '      "userReported": false\n' +
+      '    }\n' +
       '  ],\n' +
       '  "successMetrics": [\n' +
-      '    {"metric": "Discovery meetings secured", "target": "3+", "timeline": "30 days", "measurement": "How to track this"},\n' +
-      '    {"metric": "Champion identified", "target": "1", "timeline": "30 days", "measurement": "Named sponsor with budget authority"},\n' +
-      '    {"metric": "Demo/workshop delivered", "target": "1", "timeline": "45 days", "measurement": "Completed session with stakeholder feedback"},\n' +
-      '    {"metric": "POC/pilot agreement", "target": "1", "timeline": "60 days", "measurement": "Signed SOW or LOI"},\n' +
-      '    {"metric": "Pipeline value created", "target": "$1M+ ACV", "timeline": "60 days", "measurement": "Qualified opportunity in CRM"},\n' +
-      '    {"metric": "Executive sponsor alignment", "target": "C-level", "timeline": "60 days", "measurement": "Named exec champion"}\n' +
+      '    {"metric": "Specific metric", "target": "Measurable target", "timeline": "By when", "measurement": "How to track"}\n' +
       '  ]\n' +
       '}\n\n' +
-      'Generate 5-6 risks specific to THIS account (not generic). Consider:\n' +
-      '- Organizational disruption or change management risks\n' +
-      '- "We already have AI" objection\n' +
-      '- Budget/procurement complexity\n' +
-      '- Competitive displacement challenges\n' +
-      '- New leadership freezing vendor decisions\n\n' +
-      'Success metrics should be realistic for a 60-day sales engagement with this account.';
+      'Generate 5-8 risks specific to THIS account and deal. Mitigations must be actionable and align to the Aera Way sales methodology.\n' +
+      'Generate 6-8 success metrics aligned to the 30-60-90 day plan phases.';
 
     try {
-      var r5 = await AP.ApiClient.call(systemBase, call5Message, { maxTokens: 4096, jsonMode: true });
-      var p5 = parseJSON(r5.text);
-      if (p5) {
-        plan.risks = p5.risks || [];
-        plan.successMetrics = p5.successMetrics || [];
+      var r7 = await AP.ApiClient.call(systemBase, call7Msg, { maxTokens: 6144, jsonMode: true });
+      var p7 = parseJSON(r7.text);
+      if (p7) {
+        plan.risks = p7.risks || [];
+        plan.successMetrics = p7.successMetrics || [];
       }
-    } catch (err) { console.error('[PlanGen] Call 5 error:', err.message); }
+    } catch (err) { console.error('[PlanGen] Call 7 error:', err.message); }
 
     // Fallback success metrics
     if (!plan.successMetrics || plan.successMetrics.length === 0) {
       plan.successMetrics = [
         { metric: 'Discovery meetings secured', target: '3+', timeline: '30 days', measurement: 'Meetings with key stakeholders' },
         { metric: 'Champion identified', target: '1', timeline: '30 days', measurement: 'Named internal sponsor' },
-        { metric: 'Demo/workshop delivered', target: '1', timeline: '45 days', measurement: 'Completed session' },
-        { metric: 'POC/pilot agreement', target: '1', timeline: '60 days', measurement: 'Signed agreement' },
-        { metric: 'Pipeline value created', target: '$1M+ ACV', timeline: '60 days', measurement: 'CRM opportunity' },
-        { metric: 'Executive sponsor alignment', target: 'C-level', timeline: '60 days', measurement: 'Named exec champion' }
+        { metric: 'Executive sponsor engaged', target: '1', timeline: '45 days', measurement: 'C-level meeting completed' },
+        { metric: 'Business case delivered', target: '1', timeline: '60 days', measurement: 'Quantified value document' },
+        { metric: 'POC/pilot agreed', target: '1', timeline: '75 days', measurement: 'Signed scope document' },
+        { metric: 'Pipeline value created', target: '$1M+ ACV', timeline: '90 days', measurement: 'Qualified opportunity in CRM' }
       ];
     }
 

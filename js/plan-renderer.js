@@ -1,4 +1,4 @@
-/* ===== Account Plan Generator — Plan Renderer ===== */
+/* ===== Account Plan Generator — Plan Renderer (10 Tabs) ===== */
 
 AP.PlanRenderer = (function() {
   var e = AP.escapeHTML;
@@ -19,11 +19,13 @@ AP.PlanRenderer = (function() {
     html += '<div class="plan-header-meta">';
     html += '<span>Prepared by: ' + sellerName + '</span>';
     html += '<span>Generated: ' + AP.formatDate(plan.generatedAt) + '</span>';
+    if (plan.userInputs && plan.userInputs.dealStage) html += '<span>Stage: ' + e(plan.userInputs.dealStage) + '</span>';
     html += '</div>';
     html += '</div>';
     html += '<div class="plan-header-actions">';
     html += '<button class="btn btn-sm btn-secondary" id="btn-new-plan">&#8592; New Plan</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-save-plan">Save</button>';
+    html += '<button class="btn btn-sm btn-primary" id="btn-meeting-notes">Update from Meeting</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-copy-md">Copy Markdown</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-export-docx">Export Word</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-export-json">Export JSON</button>';
@@ -34,11 +36,13 @@ AP.PlanRenderer = (function() {
     var tabs = [
       { id: 'overview', label: 'Overview' },
       { id: 'news', label: 'News' },
+      { id: 'techlandscape', label: 'Tech Landscape' },
       { id: 'priorities', label: 'DI Priorities' },
       { id: 'stakeholders', label: 'Stakeholders' },
       { id: 'competitive', label: 'Competitive' },
       { id: 'value', label: 'Value Hypothesis' },
-      { id: 'plan', label: '10-30-60 Plan' },
+      { id: 'strategy', label: 'Account Strategy' },
+      { id: 'plan', label: '30-60-90 Plan' },
       { id: 'risks', label: 'Risks & Metrics' }
     ];
 
@@ -51,10 +55,12 @@ AP.PlanRenderer = (function() {
     // Panels
     html += renderOverview(plan);
     html += renderNews(plan);
+    html += renderTechLandscape(plan);
     html += renderPriorities(plan);
     html += renderStakeholders(plan);
     html += renderCompetitive(plan);
     html += renderValue(plan);
+    html += renderStrategy(plan);
     html += renderDayPlan(plan);
     html += renderRisksMetrics(plan);
 
@@ -71,7 +77,6 @@ AP.PlanRenderer = (function() {
       });
     });
 
-    // Wire action buttons
     wireActions(plan);
   }
 
@@ -80,7 +85,6 @@ AP.PlanRenderer = (function() {
     var o = plan.overview || {};
     var html = '<div id="panel-overview" class="plan-panel active">';
 
-    // Company Profile Grid
     html += '<h3 class="section-title">Company Profile</h3>';
     html += '<div class="overview-grid">';
 
@@ -104,53 +108,31 @@ AP.PlanRenderer = (function() {
     });
     html += '</div>';
 
-    // Financial Snapshot
     if (o.financialSnapshot && o.financialSnapshot.length > 0) {
       html += '<h3 class="section-title">Financial Snapshot</h3>';
-      html += '<table class="plan-table">';
-      html += '<thead><tr><th>Metric</th><th>Current Year</th><th>Prior Year</th><th>Notes</th></tr></thead>';
-      html += '<tbody>';
+      html += '<table class="plan-table"><thead><tr><th>Metric</th><th>Current Year</th><th>Prior Year</th><th>Notes</th></tr></thead><tbody>';
       o.financialSnapshot.forEach(function(row) {
-        html += '<tr>';
-        html += '<td class="text-strong">' + e(row.metric) + '</td>';
-        html += '<td>' + e(row.currentYear) + '</td>';
-        html += '<td>' + e(row.priorYear) + '</td>';
-        html += '<td>' + e(row.notes) + '</td>';
-        html += '</tr>';
+        html += '<tr><td class="text-strong">' + e(row.metric) + '</td><td>' + e(row.currentYear) + '</td><td>' + e(row.priorYear) + '</td><td>' + e(row.notes) + '</td></tr>';
       });
       html += '</tbody></table>';
     }
 
-    // Business Groups
     if (o.businessGroups && o.businessGroups.length > 0) {
       html += '<h3 class="section-title">Business Groups</h3>';
       o.businessGroups.forEach(function(bg, i) {
-        html += '<div class="biz-group">';
-        html += '<div class="biz-group-number">' + (i + 1) + '</div>';
-        html += '<div>';
+        html += '<div class="biz-group"><div class="biz-group-number">' + (i + 1) + '</div><div>';
         html += '<div class="biz-group-name">' + e(bg.name);
         if (bg.revenueShare) html += ' <span class="text-muted" style="font-size:12px">(' + e(bg.revenueShare) + ')</span>';
         html += '</div>';
         if (bg.description) html += '<div class="biz-group-desc">' + e(bg.description) + '</div>';
-        html += '</div>';
-        html += '</div>';
+        html += '</div></div>';
       });
     }
 
-    // Strategic Priorities
     if (o.strategicPriorities && o.strategicPriorities.length > 0) {
-      html += '<h3 class="section-title mt-24">Strategic Priorities</h3>';
-      html += '<ol class="priorities-list">';
-      o.strategicPriorities.forEach(function(p) {
-        html += '<li>' + e(p) + '</li>';
-      });
+      html += '<h3 class="section-title mt-24">Strategic Priorities</h3><ol class="priorities-list">';
+      o.strategicPriorities.forEach(function(p) { html += '<li>' + e(p) + '</li>'; });
       html += '</ol>';
-    }
-
-    // Technology Landscape
-    if (o.technologyLandscape) {
-      html += '<h3 class="section-title mt-24">Technology Landscape</h3>';
-      html += '<p style="font-size:14px; color:var(--text-secondary); line-height:1.6;">' + e(o.technologyLandscape) + '</p>';
     }
 
     html += '</div>';
@@ -167,26 +149,75 @@ AP.PlanRenderer = (function() {
     } else {
       plan.news.forEach(function(n, i) {
         html += '<div class="news-item">';
-        html += '<div class="news-item-header">';
-        html += '<div class="news-item-headline">' + (i + 1) + '. ' + e(n.headline) + '</div>';
+        html += '<div class="news-item-header"><div class="news-item-headline">' + (i + 1) + '. ' + e(n.headline) + '</div>';
         if (n.date) html += '<div class="news-item-date">' + e(n.date) + '</div>';
         html += '</div>';
-        if (n.detail) {
-          html += '<div class="news-item-detail">' + e(n.detail) + '</div>';
-        }
+        if (n.detail) html += '<div class="news-item-detail">' + e(n.detail) + '</div>';
         html += '<div class="news-item-footer">';
         if (n.source) html += '<span>Source: ' + e(n.source) + '</span>';
         if (n.relevanceTag) html += '<span class="badge badge-blue">' + e(n.relevanceTag) + '</span>';
-        html += '</div>';
-        html += '</div>';
+        html += '</div></div>';
       });
+    }
+    html += '</div>';
+    return html;
+  }
+
+  // ===== MODULE 3: Technology Landscape (NEW) =====
+  function renderTechLandscape(plan) {
+    var t = plan.technologyLandscape || {};
+    var html = '<div id="panel-techlandscape" class="plan-panel">';
+    html += '<h3 class="section-title">Technology Landscape</h3>';
+
+    if (t.knownSystems && t.knownSystems.length > 0) {
+      // Group by category
+      var categories = {};
+      t.knownSystems.forEach(function(sys) {
+        var cat = sys.category || 'Other';
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push(sys);
+      });
+
+      Object.keys(categories).forEach(function(cat) {
+        html += '<div class="tech-category">';
+        html += '<h4 class="tech-category-title">' + e(cat) + '</h4>';
+        html += '<div class="tech-cards">';
+        categories[cat].forEach(function(sys) {
+          var confClass = sys.confidence === 'Confirmed' ? 'badge-green' : (sys.confidence === 'Likely' ? 'badge-amber' : 'badge-muted');
+          html += '<div class="tech-card">';
+          html += '<div class="tech-card-header">';
+          html += '<span class="tech-vendor">' + e(sys.vendor) + '</span>';
+          html += '<span class="badge ' + confClass + '">' + e(sys.confidence || 'Unknown') + '</span>';
+          html += '</div>';
+          if (sys.product) html += '<div class="tech-product">' + e(sys.product) + '</div>';
+          if (sys.evidence) html += '<div class="tech-evidence">' + e(sys.evidence) + '</div>';
+          html += '</div>';
+        });
+        html += '</div></div>';
+      });
+    } else {
+      html += '<p class="text-muted">No technology stack data found. Try generating again or check company name.</p>';
+    }
+
+    if (t.digitalStrategy) {
+      html += '<h3 class="section-title mt-24">Digital Strategy</h3>';
+      html += '<p class="section-text">' + e(t.digitalStrategy) + '</p>';
+    }
+
+    if (t.itLeadership) {
+      html += '<h3 class="section-title mt-24">IT Leadership</h3>';
+      html += '<p class="section-text">' + e(t.itLeadership) + '</p>';
+    }
+
+    if (t.techBudget) {
+      html += '<div class="callout callout-info mt-16"><strong>IT Spend:</strong> ' + e(t.techBudget) + '</div>';
     }
 
     html += '</div>';
     return html;
   }
 
-  // ===== MODULE 3: DI Priorities =====
+  // ===== MODULE 4: DI Priorities =====
   function renderPriorities(plan) {
     var html = '<div id="panel-priorities" class="plan-panel">';
     html += '<h3 class="section-title">Decision Intelligence Priorities</h3>';
@@ -197,7 +228,6 @@ AP.PlanRenderer = (function() {
       plan.diPriorities.forEach(function(p, i) {
         html += '<div class="priority-card">';
         html += '<div class="priority-rank' + (i === 0 ? ' top' : '') + '">' + (p.rank || (i + 1)) + '</div>';
-
         html += '<div class="priority-header">';
         html += '<div class="priority-area">' + e(p.area) + '</div>';
         if (p.urgency) {
@@ -205,36 +235,17 @@ AP.PlanRenderer = (function() {
           html += '<span class="badge ' + urgencyClass + '">' + e(p.urgency) + '</span>';
         }
         html += '</div>';
-
-        if (p.context) {
-          html += '<div class="priority-section">';
-          html += '<div class="priority-section-label">Context</div>';
-          html += '<div class="priority-section-text">' + e(p.context) + '</div>';
-          html += '</div>';
-        }
-
-        if (p.sellerValueProp) {
-          html += '<div class="priority-section">';
-          html += '<div class="priority-section-label">Value Proposition</div>';
-          html += '<div class="priority-section-text">' + e(p.sellerValueProp) + '</div>';
-          html += '</div>';
-        }
-
-        if (p.estimatedImpact) {
-          html += '<div class="priority-footer">';
-          html += '<span class="badge badge-green">Impact: ' + e(p.estimatedImpact) + '</span>';
-          html += '</div>';
-        }
-
+        if (p.context) html += '<div class="priority-section"><div class="priority-section-label">Context</div><div class="priority-section-text">' + e(p.context) + '</div></div>';
+        if (p.sellerValueProp) html += '<div class="priority-section"><div class="priority-section-label">Value Proposition</div><div class="priority-section-text">' + e(p.sellerValueProp) + '</div></div>';
+        if (p.estimatedImpact) html += '<div class="priority-footer"><span class="badge badge-green">Impact: ' + e(p.estimatedImpact) + '</span></div>';
         html += '</div>';
       });
     }
-
     html += '</div>';
     return html;
   }
 
-  // ===== MODULE 4: Stakeholders =====
+  // ===== MODULE 5: Stakeholders (Enhanced with quotes) =====
   function renderStakeholders(plan) {
     var html = '<div id="panel-stakeholders" class="plan-panel">';
     html += '<h3 class="section-title">Stakeholder Mapping</h3>';
@@ -242,114 +253,167 @@ AP.PlanRenderer = (function() {
     if (!plan.stakeholders || plan.stakeholders.length === 0) {
       html += '<p class="text-muted">No stakeholders generated.</p>';
     } else {
-      html += '<table class="plan-table">';
-      html += '<thead><tr><th>Name</th><th>Title</th><th>Role</th><th>Relevance</th><th>Engagement Strategy</th></tr></thead>';
-      html += '<tbody>';
+      // Card-based layout instead of table
       plan.stakeholders.forEach(function(s) {
         var roleKey = (s.roleInDeal || '').toLowerCase().replace(/\s+/g, '');
         if (roleKey === 'executivesponsor') roleKey = 'sponsor';
-        html += '<tr>';
-        html += '<td class="text-strong">' + e(s.name) + '</td>';
-        html += '<td>' + e(s.title) + '</td>';
-        html += '<td><span class="role-badge ' + roleKey + '">' + e(s.roleInDeal) + '</span></td>';
-        html += '<td>' + e(s.relevance) + '</td>';
-        html += '<td style="max-width:300px;">' + e(s.engagementStrategy || s.notes || '') + '</td>';
-        html += '</tr>';
+        var confBadge = '';
+        if (s.confidence) {
+          var cClass = s.confidence === 'Verified' ? 'badge-green' : (s.confidence === 'Likely' ? 'badge-amber' : 'badge-muted');
+          confBadge = '<span class="badge ' + cClass + '">' + e(s.confidence) + '</span>';
+        }
+
+        html += '<div class="stakeholder-card">';
+        html += '<div class="stakeholder-header">';
+        html += '<div><span class="stakeholder-name">' + e(s.name) + '</span>';
+        html += '<span class="stakeholder-title">' + e(s.title) + '</span></div>';
+        html += '<div class="stakeholder-badges"><span class="role-badge ' + roleKey + '">' + e(s.roleInDeal) + '</span>';
+        if (s.relevance) html += '<span class="badge badge-blue">' + e(s.relevance) + '</span>';
+        html += confBadge + '</div>';
+        html += '</div>';
+
+        if (s.notes) html += '<div class="stakeholder-notes">' + e(s.notes) + '</div>';
+
+        if (s.engagementStrategy) {
+          html += '<div class="stakeholder-engagement"><div class="engagement-label">Engagement Strategy</div>';
+          html += '<div class="engagement-text">' + e(s.engagementStrategy) + '</div></div>';
+        }
+
+        // Public quotes
+        if (s.publicQuotes && s.publicQuotes.length > 0) {
+          html += '<div class="stakeholder-quotes">';
+          s.publicQuotes.forEach(function(q) {
+            html += '<blockquote class="stakeholder-quote">';
+            html += '<p>"' + e(q.quote) + '"</p>';
+            html += '<cite>' + e(q.source || '') + (q.date ? ' (' + e(q.date) + ')' : '') + '</cite>';
+            html += '</blockquote>';
+          });
+          html += '</div>';
+        }
+
+        html += '</div>';
       });
-      html += '</tbody></table>';
-
-      // Engagement Strategy by Persona (if notes exist separately from engagement strategy)
-      var hasNotes = plan.stakeholders.some(function(s) { return s.notes && s.engagementStrategy; });
-      if (hasNotes) {
-        html += '<h3 class="section-title mt-24">Engagement Notes</h3>';
-        plan.stakeholders.forEach(function(s) {
-          if (s.notes && s.engagementStrategy) {
-            html += '<div style="margin-bottom:10px;">';
-            html += '<strong style="color:var(--text-primary); font-size:13px;">' + e(s.name) + ' (' + e(s.title) + '):</strong> ';
-            html += '<span style="font-size:13px; color:var(--text-secondary);">' + e(s.notes) + '</span>';
-            html += '</div>';
-          }
-        });
-      }
     }
-
     html += '</div>';
     return html;
   }
 
-  // ===== MODULE 5: Competitive =====
+  // ===== MODULE 6: Competitive (Enhanced with user-reported) =====
   function renderCompetitive(plan) {
     var c = plan.competitive || {};
     var html = '<div id="panel-competitive" class="plan-panel">';
     html += '<h3 class="section-title">Competitive Landscape</h3>';
+
+    // Show user input if present
+    if (plan.userInputs && plan.userInputs.suspectedCompetitors) {
+      html += '<div class="callout callout-info mb-16"><strong>Sales Team Intelligence:</strong> ' + e(plan.userInputs.suspectedCompetitors) + '</div>';
+    }
 
     if (c.positioning) {
       html += '<div class="competitive-positioning">' + e(c.positioning) + '</div>';
     }
 
     if (c.landscape && c.landscape.length > 0) {
-      html += '<table class="plan-table">';
-      html += '<thead><tr><th>Competitor</th><th>Weakness</th><th>Our Advantage</th></tr></thead>';
-      html += '<tbody>';
       c.landscape.forEach(function(comp) {
-        html += '<tr>';
-        html += '<td class="text-strong">' + e(comp.competitor) + '</td>';
-        html += '<td>' + e(comp.weakness) + '</td>';
-        html += '<td>' + e(comp.sellerAdvantage || comp.aeraAdvantage || '') + '</td>';
-        html += '</tr>';
+        var userBadge = comp.userReported ? '<span class="badge badge-amber">User Reported</span>' : '';
+        var presenceBadge = comp.presence ? '<span class="badge badge-blue">' + e(comp.presence) + '</span>' : '';
+
+        html += '<div class="competitor-card">';
+        html += '<div class="competitor-header">';
+        html += '<span class="competitor-name">' + e(comp.competitor) + '</span>';
+        html += '<div class="competitor-badges">' + presenceBadge + userBadge + '</div>';
+        html += '</div>';
+        if (comp.weakness) html += '<div class="competitor-section"><div class="competitor-label">Weakness</div><div>' + e(comp.weakness) + '</div></div>';
+        if (comp.sellerAdvantage || comp.aeraAdvantage) html += '<div class="competitor-section"><div class="competitor-label">Our Advantage</div><div>' + e(comp.sellerAdvantage || comp.aeraAdvantage) + '</div></div>';
+        if (comp.battleCard) html += '<div class="competitor-battlecard"><strong>Talk Track:</strong> ' + e(comp.battleCard) + '</div>';
+        html += '</div>';
       });
-      html += '</tbody></table>';
     } else {
       html += '<p class="text-muted">No competitive data generated.</p>';
     }
-
     html += '</div>';
     return html;
   }
 
-  // ===== MODULE 6: Value Hypothesis =====
+  // ===== MODULE 7: Value Hypothesis =====
   function renderValue(plan) {
     var v = plan.valueHypothesis || {};
     var html = '<div id="panel-value" class="plan-panel">';
     html += '<h3 class="section-title">Value Hypothesis</h3>';
 
     if (v.executivePitch) {
-      html += '<h4 style="font-size:13px; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Executive Pitch</h4>';
+      html += '<h4 class="subsection-label">Executive Pitch</h4>';
       html += '<div class="exec-pitch">"' + e(v.executivePitch) + '"</div>';
     }
 
-    if (v.metrics && v.metrics.length > 0) {
-      html += '<h4 style="font-size:13px; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">Quantified Value Metrics</h4>';
-      html += '<table class="plan-table">';
-      html += '<thead><tr><th>Metric</th><th>Impact</th><th>Confidence</th></tr></thead>';
-      html += '<tbody>';
-      v.metrics.forEach(function(m) {
-        var confClass = m.confidence === 'High' ? 'badge-green' : (m.confidence === 'Medium' ? 'badge-amber' : 'badge-muted');
-        html += '<tr>';
-        html += '<td class="text-strong">' + e(m.metric) + '</td>';
-        html += '<td>' + e(m.impact) + '</td>';
-        html += '<td><span class="badge ' + confClass + '">' + e(m.confidence) + '</span></td>';
-        html += '</tr>';
-      });
-      html += '</tbody></table>';
-    } else {
-      html += '<p class="text-muted">No value metrics generated.</p>';
+    if (v.whyNow) {
+      html += '<div class="callout callout-warn mt-16"><strong>Why Now:</strong> ' + e(v.whyNow) + '</div>';
     }
 
+    if (v.metrics && v.metrics.length > 0) {
+      html += '<h4 class="subsection-label mt-24">Quantified Value Metrics</h4>';
+      html += '<table class="plan-table"><thead><tr><th>Metric</th><th>Impact</th><th>Confidence</th><th>Basis</th></tr></thead><tbody>';
+      v.metrics.forEach(function(m) {
+        var confClass = m.confidence === 'High' ? 'badge-green' : (m.confidence === 'Medium' ? 'badge-amber' : 'badge-muted');
+        html += '<tr><td class="text-strong">' + e(m.metric) + '</td><td>' + e(m.impact) + '</td>';
+        html += '<td><span class="badge ' + confClass + '">' + e(m.confidence) + '</span></td>';
+        html += '<td>' + e(m.basis || '') + '</td></tr>';
+      });
+      html += '</tbody></table>';
+    }
     html += '</div>';
     return html;
   }
 
-  // ===== MODULE 7: 10-30-60 Day Plan =====
+  // ===== MODULE 8: Account Strategy (NEW) =====
+  function renderStrategy(plan) {
+    var s = plan.accountStrategy || {};
+    var html = '<div id="panel-strategy" class="plan-panel">';
+    html += '<h3 class="section-title">Account Strategy</h3>';
+
+    if (!s.positioning && !s.whyAera) {
+      html += '<p class="text-muted">No account strategy generated. Add account context for better results.</p>';
+    } else {
+      if (s.positioning) {
+        html += '<div class="strategy-section"><h4 class="subsection-label">Strategic Positioning</h4>';
+        html += '<p class="section-text">' + e(s.positioning) + '</p></div>';
+      }
+
+      if (s.whyAera) {
+        html += '<div class="strategy-section"><h4 class="subsection-label">Why Aera</h4>';
+        html += '<div class="callout callout-success">' + e(s.whyAera) + '</div></div>';
+      }
+
+      if (s.whyNow) {
+        html += '<div class="strategy-section"><h4 class="subsection-label">Why Now</h4>';
+        html += '<div class="callout callout-warn">' + e(s.whyNow) + '</div></div>';
+      }
+
+      if (s.landingZone) {
+        html += '<div class="strategy-section"><h4 class="subsection-label">Landing Zone</h4>';
+        html += '<p class="section-text">' + e(s.landingZone) + '</p></div>';
+      }
+
+      if (s.keyMessages && s.keyMessages.length > 0) {
+        html += '<div class="strategy-section"><h4 class="subsection-label">Key Messages</h4><ol class="key-messages-list">';
+        s.keyMessages.forEach(function(m) { html += '<li>' + e(m) + '</li>'; });
+        html += '</ol></div>';
+      }
+    }
+    html += '</div>';
+    return html;
+  }
+
+  // ===== MODULE 9: 30-60-90 Day Plan + Next 5 Steps =====
   function renderDayPlan(plan) {
-    var p = plan.plan || {};
+    var p = plan.dayPlan || {};
     var html = '<div id="panel-plan" class="plan-panel">';
-    html += '<h3 class="section-title">10-30-60 Day Engagement Plan</h3>';
+    html += '<h3 class="section-title">30-60-90 Day Engagement Plan</h3>';
 
     var phases = [
-      { key: 'day10', badge: 'd10', label: 'Days 1-10' },
-      { key: 'day30', badge: 'd30', label: 'Days 11-30' },
-      { key: 'day60', badge: 'd60', label: 'Days 31-60' }
+      { key: 'day30', badge: 'd30', label: 'Days 1-30' },
+      { key: 'day60', badge: 'd60', label: 'Days 31-60' },
+      { key: 'day90', badge: 'd90', label: 'Days 61-90' }
     ];
 
     phases.forEach(function(phase) {
@@ -357,83 +421,88 @@ AP.PlanRenderer = (function() {
       if (!data) return;
 
       html += '<div class="phase-block">';
-      html += '<div class="phase-title">';
-      html += '<span class="phase-badge ' + phase.badge + '">' + phase.label + '</span>';
-      html += e(data.title || '');
-      html += '</div>';
+      html += '<div class="phase-title"><span class="phase-badge ' + phase.badge + '">' + phase.label + '</span>' + e(data.title || '') + '</div>';
 
-      if (data.actions && data.actions.length > 0) {
-        // Check if actions are objects or strings
-        if (typeof data.actions[0] === 'object') {
-          html += '<table class="plan-table">';
-          html += '<thead><tr><th>Day</th><th>Action</th><th>Owner</th><th>Deliverable</th></tr></thead>';
-          html += '<tbody>';
-          data.actions.forEach(function(a) {
-            html += '<tr>';
-            html += '<td class="text-strong" style="white-space:nowrap;">' + e(a.day || '') + '</td>';
-            html += '<td>' + e(a.action || '') + '</td>';
-            html += '<td style="white-space:nowrap;">' + e(a.owner || '') + '</td>';
-            html += '<td>' + e(a.deliverable || '') + '</td>';
-            html += '</tr>';
-          });
-          html += '</tbody></table>';
-        } else {
-          // String array fallback
-          html += '<ul style="list-style:none; padding:0;">';
-          data.actions.forEach(function(a) {
-            html += '<li style="padding:6px 0; font-size:13px; color:var(--text-secondary); border-bottom:1px solid rgba(255,255,255,0.03);">&#8226; ' + e(a) + '</li>';
-          });
-          html += '</ul>';
-        }
+      if (data.whatGoodLooksLike) {
+        html += '<div class="callout callout-success wgll"><strong>What Good Looks Like:</strong> ' + e(data.whatGoodLooksLike) + '</div>';
       }
 
+      if (data.actions && data.actions.length > 0 && typeof data.actions[0] === 'object') {
+        html += '<table class="plan-table"><thead><tr><th>Day</th><th>Action</th><th>Owner</th><th>Deliverable</th></tr></thead><tbody>';
+        data.actions.forEach(function(a) {
+          html += '<tr><td class="text-strong" style="white-space:nowrap;">' + e(a.day || '') + '</td>';
+          html += '<td>' + e(a.action || '') + '</td>';
+          html += '<td style="white-space:nowrap;">' + e(a.owner || '') + '</td>';
+          html += '<td>' + e(a.deliverable || '') + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      }
       html += '</div>';
     });
+
+    // Next 5 Steps
+    if (plan.nextFiveSteps && plan.nextFiveSteps.length > 0) {
+      html += '<h3 class="section-title mt-32">Next 5 Steps</h3>';
+      html += '<div class="next-steps-list">';
+      plan.nextFiveSteps.forEach(function(s, i) {
+        html += '<div class="next-step-item">';
+        html += '<div class="next-step-number">' + (s.step || (i + 1)) + '</div>';
+        html += '<div class="next-step-content">';
+        html += '<div class="next-step-action">' + e(s.action) + '</div>';
+        html += '<div class="next-step-meta">';
+        if (s.owner) html += '<span><strong>Owner:</strong> ' + e(s.owner) + '</span>';
+        if (s.by) html += '<span><strong>By:</strong> ' + e(s.by) + '</span>';
+        if (s.outcome) html += '<span><strong>Outcome:</strong> ' + e(s.outcome) + '</span>';
+        html += '</div></div></div>';
+      });
+      html += '</div>';
+    }
 
     html += '</div>';
     return html;
   }
 
-  // ===== MODULE 8: Risks & Success Metrics =====
+  // ===== MODULE 10: Risks & Success Metrics (Enhanced) =====
   function renderRisksMetrics(plan) {
     var html = '<div id="panel-risks" class="plan-panel">';
 
-    // Risks
+    // Show user input if present
+    if (plan.userInputs && plan.userInputs.knownRisks) {
+      html += '<div class="callout callout-info mb-16"><strong>Sales Team Concerns:</strong> ' + e(plan.userInputs.knownRisks) + '</div>';
+    }
+
     html += '<h3 class="section-title">Key Risks & Mitigations</h3>';
 
     if (plan.risks && plan.risks.length > 0) {
-      html += '<table class="plan-table">';
-      html += '<thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead>';
-      html += '<tbody>';
       plan.risks.forEach(function(r) {
-        var lClass = 'likelihood-' + (r.likelihood || 'medium').toLowerCase();
-        var iClass = 'likelihood-' + (r.impact || 'medium').toLowerCase();
-        html += '<tr>';
-        html += '<td class="text-strong">' + e(r.risk) + '</td>';
-        html += '<td class="' + lClass + '">' + e(r.likelihood || 'Medium') + '</td>';
-        html += '<td class="' + iClass + '">' + e(r.impact || 'Medium') + '</td>';
-        html += '<td>' + e(r.mitigation) + '</td>';
-        html += '</tr>';
+        var lClass = (r.likelihood || 'Medium').toLowerCase();
+        var iClass = (r.impact || 'Medium').toLowerCase();
+        var userBadge = r.userReported ? '<span class="badge badge-amber">User Reported</span>' : '';
+        var catBadge = r.category ? '<span class="badge badge-blue">' + e(r.category) + '</span>' : '';
+
+        html += '<div class="risk-card">';
+        html += '<div class="risk-header">';
+        html += '<div class="risk-title">' + e(r.risk) + '</div>';
+        html += '<div class="risk-badges">' + catBadge + userBadge + '</div>';
+        html += '</div>';
+        html += '<div class="risk-severity">';
+        html += '<span class="risk-tag likelihood-' + lClass + '">Likelihood: ' + e(r.likelihood || 'Medium') + '</span>';
+        html += '<span class="risk-tag likelihood-' + iClass + '">Impact: ' + e(r.impact || 'Medium') + '</span>';
+        if (r.owner) html += '<span class="risk-tag">Owner: ' + e(r.owner) + '</span>';
+        html += '</div>';
+        if (r.mitigation) html += '<div class="risk-mitigation"><strong>Mitigation:</strong> ' + e(r.mitigation) + '</div>';
+        html += '</div>';
       });
-      html += '</tbody></table>';
     } else {
       html += '<p class="text-muted">No risks generated.</p>';
     }
 
     // Success Metrics
     html += '<h3 class="section-title mt-32">Success Metrics</h3>';
-
     if (plan.successMetrics && plan.successMetrics.length > 0) {
-      html += '<table class="plan-table">';
-      html += '<thead><tr><th>Metric</th><th>Target</th><th>Timeline</th><th>Measurement</th></tr></thead>';
-      html += '<tbody>';
+      html += '<table class="plan-table"><thead><tr><th>Metric</th><th>Target</th><th>Timeline</th><th>Measurement</th></tr></thead><tbody>';
       plan.successMetrics.forEach(function(m) {
-        html += '<tr>';
-        html += '<td class="text-strong">' + e(m.metric) + '</td>';
-        html += '<td>' + e(m.target) + '</td>';
-        html += '<td>' + e(m.timeline) + '</td>';
-        html += '<td>' + e(m.measurement) + '</td>';
-        html += '</tr>';
+        html += '<tr><td class="text-strong">' + e(m.metric) + '</td><td>' + e(m.target) + '</td><td>' + e(m.timeline) + '</td><td>' + e(m.measurement) + '</td></tr>';
       });
       html += '</tbody></table>';
     } else {
@@ -446,39 +515,30 @@ AP.PlanRenderer = (function() {
 
   // ===== Wire Action Buttons =====
   function wireActions(plan) {
-    // Save
     var saveBtn = document.getElementById('btn-save-plan');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', function() {
-        AP.PlanPersistence.saveLocal(plan);
-        AP.showToast('Plan saved');
-      });
-    }
+    if (saveBtn) saveBtn.addEventListener('click', function() { AP.PlanPersistence.saveLocal(plan); AP.showToast('Plan saved'); });
 
-    // Copy Markdown
     var copyBtn = document.getElementById('btn-copy-md');
-    if (copyBtn) {
-      copyBtn.addEventListener('click', function() {
-        var md = AP.PlanExport.toMarkdown(plan);
-        AP.copyToClipboard(md);
-      });
-    }
+    if (copyBtn) copyBtn.addEventListener('click', function() { var md = AP.PlanExport.toMarkdown(plan); AP.copyToClipboard(md); });
 
-    // Export Word
     var docxBtn = document.getElementById('btn-export-docx');
-    if (docxBtn) {
-      docxBtn.addEventListener('click', function() {
-        AP.PlanExport.toDocx(plan);
+    if (docxBtn) docxBtn.addEventListener('click', function() { AP.PlanExport.toDocx(plan); });
+
+    var jsonBtn = document.getElementById('btn-export-json');
+    if (jsonBtn) jsonBtn.addEventListener('click', function() { AP.PlanPersistence.downloadJSON(plan); });
+
+    // Meeting Notes button
+    var notesBtn = document.getElementById('btn-meeting-notes');
+    if (notesBtn) {
+      notesBtn.addEventListener('click', function() {
+        var modal = document.getElementById('meeting-notes-modal');
+        if (modal) modal.classList.remove('hidden');
       });
     }
 
-    // Export JSON
-    var jsonBtn = document.getElementById('btn-export-json');
-    if (jsonBtn) {
-      jsonBtn.addEventListener('click', function() {
-        AP.PlanPersistence.downloadJSON(plan);
-      });
-    }
+    // New Plan button
+    var newBtn = document.getElementById('btn-new-plan');
+    if (newBtn) newBtn.addEventListener('click', function() { AP.navigateTo('home'); });
   }
 
   return { render: render };

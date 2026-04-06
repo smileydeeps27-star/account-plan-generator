@@ -1,0 +1,543 @@
+{
+  "salesMethodology": {
+    "name": "The Aera Way for Sales",
+    "philosophy": "Aera sells Decision Intelligence as a strategic capability — not a tool purchase. Every engagement must connect technology to measurable business outcomes, build consensus across the C-suite, and demonstrate autonomous decisioning in the customer's own environment. We lead with the business problem, prove value fast through pre-built Skills, and expand from a single use case into an enterprise-wide Decision Intelligence platform.",
+    "dealStages": [
+      {
+        "stage": "Research & Targeting",
+        "description": "Identify and prioritize accounts that match the Ideal Customer Profile. Build an account hypothesis around likely decision intelligence gaps using public data, industry trends, and intent signals.",
+        "exitCriteria": "Account hypothesis documented with at least 2 validated pain points, 3+ key stakeholders identified, and a compelling outreach angle tied to a specific Aera Skill.",
+        "keyActivities": [
+          "Analyze 10-K/10-Q filings for supply chain complexity, inventory issues, or margin pressure",
+          "Map organizational structure — identify VP+ leaders in Supply Chain, Finance, IT, and Operations",
+          "Research existing technology stack (ERP, planning tools, BI platforms) via job postings and vendor announcements",
+          "Identify trigger events: leadership changes, M&A activity, earnings misses, digital transformation announcements",
+          "Develop account hypothesis: 2-3 specific pain points Aera can address with named Skills",
+          "Score account against ICP criteria: revenue >$500M, global operations, complex supply chain, existing ERP"
+        ]
+      },
+      {
+        "stage": "Initial Outreach",
+        "description": "Make contact with target stakeholders using a value-led, insight-driven approach. The goal is to earn a discovery meeting by demonstrating genuine understanding of their business challenges.",
+        "exitCriteria": "Discovery meeting scheduled with at least one director-level or above stakeholder in a relevant business function.",
+        "keyActivities": [
+          "Send personalized outreach referencing specific account hypothesis and industry-relevant Decision Intelligence use case",
+          "Lead with a provocative insight or benchmark (e.g., 'Companies in your sector are reducing inventory by 15-30% with real-time demand sensing')",
+          "Leverage warm introductions through existing customers, partners, analysts, or advisory board",
+          "Share relevant thought leadership: Aera Decision Intelligence whitepapers, Gartner references, customer case studies",
+          "Follow up across multiple channels (email, LinkedIn, phone) with varied value-add content",
+          "If no response after 3 touches, engage a second stakeholder in the account"
+        ]
+      },
+      {
+        "stage": "Discovery",
+        "description": "Conduct structured discovery to deeply understand the customer's current state, pain points, decision-making processes, and desired future state. Map how decisions are made today and where Decision Intelligence can transform outcomes.",
+        "exitCriteria": "Completed discovery brief documenting current decision processes, quantified pain points, desired outcomes, key stakeholders, and initial mapping to 1-2 Aera Skills.",
+        "keyActivities": [
+          "Run a Decision Intelligence Assessment: map how key decisions (e.g., demand planning, inventory allocation) are made today",
+          "Quantify the cost of current decision gaps: delayed decisions, forecast errors, excess inventory, missed revenue",
+          "Understand the decision cycle: who decides, what data they use, how long it takes, what happens when they're wrong",
+          "Identify the 'burning platform' — the urgent business reason to act now vs. next quarter",
+          "Map stakeholder landscape: who influences, who decides, who blocks, who champions",
+          "Document existing technology landscape and integration requirements",
+          "Identify quick-win use case for POC and longer-term platform vision"
+        ]
+      },
+      {
+        "stage": "Qualification (MEDDPICC)",
+        "description": "Rigorously qualify the opportunity using MEDDPICC framework. Every deal must have a validated champion, quantified business case, identified decision process, and clear paper process before investing in solution design.",
+        "exitCriteria": "All MEDDPICC elements scored, champion validated through a 'test,' economic buyer identified and at minimum aware of the initiative, and compelling event confirmed.",
+        "keyActivities": [
+          "Metrics: Define 3-5 measurable outcomes with the champion (e.g., '$8M inventory reduction in 12 months')",
+          "Economic Buyer: Identify the person who can approve budget and confirm they are aware of the initiative",
+          "Decision Criteria: Document technical, business, and relationship criteria that will drive the selection",
+          "Decision Process: Map the exact steps from POC approval to contract signature, including procurement and legal",
+          "Paper Process: Understand MSA/SOW requirements, procurement timeline, legal review process, and approval thresholds",
+          "Identify Pain: Validate that pain is acute, quantified, and tied to strategic priorities the economic buyer cares about",
+          "Champion: Test the champion — will they sell internally, share org chart, coach on objections, introduce to economic buyer?",
+          "Competition: Identify all alternatives being considered (including do-nothing and build-your-own)"
+        ]
+      },
+      {
+        "stage": "Solution Design",
+        "description": "Co-design the solution with the customer, mapping specific Aera Skills to their decision processes. Build a joint business case and define POC scope that demonstrates measurable value in 4-8 weeks.",
+        "exitCriteria": "Joint solution design document approved by champion and technical sponsor, POC scope defined with success criteria, and preliminary business case reviewed with economic buyer's team.",
+        "keyActivities": [
+          "Map customer decision processes to specific Aera Skills (e.g., Demand Sensing, Inventory Optimization)",
+          "Design data integration architecture with IT — identify data sources, APIs, and refresh requirements",
+          "Build financial business case: quantify current-state costs, projected improvements, and 3-year ROI",
+          "Define POC scope: 1-2 Skills, specific data set, clear success metrics, 4-8 week timeline",
+          "Conduct technical architecture review with customer IT team",
+          "Present solution vision to economic buyer with business case and POC plan",
+          "Align on POC success criteria that directly map to full deployment business case"
+        ]
+      },
+      {
+        "stage": "POC / Pilot",
+        "description": "Execute a time-boxed proof of concept using the customer's own data to demonstrate Decision Intelligence value. The POC must produce quantified results that justify full deployment investment.",
+        "exitCriteria": "POC success criteria met with documented results, champion and economic buyer aligned on moving to full deployment, and commercial discussion initiated.",
+        "keyActivities": [
+          "Stand up Aera environment with customer data integration (target: 2 weeks to first insight)",
+          "Configure 1-2 Aera Skills against agreed use case and data sources",
+          "Run weekly POC review meetings with stakeholders — show progressive value delivery",
+          "Document every decision recommendation Aera makes vs. what the customer would have done manually",
+          "Quantify POC results: forecast accuracy improvement, inventory reduction, time savings, revenue impact",
+          "Conduct executive POC readout with results, business case update, and deployment roadmap",
+          "Gather user feedback and document change management requirements for full deployment",
+          "Begin commercial discussion in parallel with POC execution"
+        ]
+      },
+      {
+        "stage": "Negotiation & Close",
+        "description": "Convert POC success into a commercial agreement. Negotiate terms that reflect the strategic value of Decision Intelligence while establishing a land-and-expand foundation.",
+        "exitCriteria": "Contract executed with clear deployment scope, timeline, success metrics, and expansion triggers defined.",
+        "keyActivities": [
+          "Present formal proposal anchored to POC results and updated business case",
+          "Structure deal for land-and-expand: initial deployment scope with contractual expansion options",
+          "Navigate procurement process — engage procurement early, provide security documentation, complete vendor assessments",
+          "Handle legal redlines — leverage pre-approved fallback positions on key terms (IP, liability, SLAs)",
+          "Maintain champion engagement throughout — they should be selling internally alongside you",
+          "Secure executive sponsor letter or verbal commitment before final negotiation",
+          "Define deployment timeline, resource requirements, and governance structure in SOW",
+          "Close with mutual success plan: 90-day deployment milestones tied to business outcomes"
+        ]
+      },
+      {
+        "stage": "Onboarding & Expansion",
+        "description": "Ensure successful deployment and time-to-value, then systematically expand into additional use cases, business units, and geographies. Every deployment should generate expansion pipeline.",
+        "exitCriteria": "Initial deployment live and delivering measurable value, at least one expansion opportunity identified and in pipeline, and customer reference secured.",
+        "keyActivities": [
+          "Execute mutual success plan with customer success team — hit 90-day milestones",
+          "Conduct monthly business reviews showing Decision Intelligence ROI vs. business case projections",
+          "Identify expansion use cases during deployment: adjacent Skills, additional business units, new geographies",
+          "Build relationships with new stakeholders in expansion areas",
+          "Develop customer into a reference: case study, analyst reference, speaking opportunity",
+          "Introduce Customer Advisory Board opportunity for strategic accounts",
+          "Plan annual executive business review to refresh strategic alignment and expansion roadmap",
+          "Target: expand to 3+ Aera Skills within 18 months of initial deployment"
+        ]
+      }
+    ],
+    "whatGoodLooksLike": {
+      "day30": {
+        "focus": "Pipeline foundation — build qualified pipeline through disciplined research, targeted outreach, and rigorous discovery",
+        "outcomes": [
+          "Completed ICP-based territory analysis with top 25 target accounts ranked by fit and timing",
+          "Initiated outreach to 15+ accounts with personalized, insight-led messaging",
+          "Conducted 6-8 discovery meetings with director-level or above stakeholders",
+          "Advanced 3-4 opportunities to active qualification (MEDDPICC scoring initiated)",
+          "Identified at least 2 potential champions who have agreed to internal advocacy",
+          "Built initial stakeholder maps for top 5 opportunities",
+          "Developed deep fluency in 2-3 Aera Skills most relevant to territory verticals"
+        ],
+        "successCriteria": "3-4 qualified opportunities in active discovery/qualification with validated pain points and identified champions. Pipeline coverage of 3x quota for the half."
+      },
+      "day60": {
+        "focus": "Deal progression — advance qualified deals through solution design and POC commitment while continuing to build pipeline",
+        "outcomes": [
+          "2-3 deals in solution design or POC stage with defined success criteria",
+          "At least 1 POC in execution with customer data integrated and weekly reviews underway",
+          "Economic buyer engaged (at minimum aware and supportive) in top 2 opportunities",
+          "MEDDPICC fully scored for all active deals — no gaps in champion, decision process, or paper process",
+          "Business case drafted for top 2 opportunities with quantified ROI projections",
+          "Initiated outreach to next wave of 10+ accounts to sustain pipeline build",
+          "Completed competitive displacement analysis for any deals with incumbent solutions"
+        ],
+        "successCriteria": "At least 1 deal at POC stage with executive buy-in. Full MEDDPICC qualification on all active opportunities. Pipeline coverage maintained at 3x for the half."
+      },
+      "day90": {
+        "focus": "Closing and credibility — close first deal(s), establish a track record, and build a repeatable playbook for the territory",
+        "outcomes": [
+          "1 deal closed or in final negotiation with clear path to signature within 2 weeks",
+          "2+ POCs completed or in progress with documented results exceeding success criteria",
+          "Pipeline of 5-8 qualified opportunities spanning multiple deal stages",
+          "At least 1 multi-threaded deal with 3+ stakeholder relationships (business, IT, executive)",
+          "Developed territory-specific value propositions and competitive plays based on first 90 days of learning",
+          "Established rhythm: weekly pipeline reviews, monthly territory planning, quarterly business reviews",
+          "Built internal network: aligned with Solutions Engineering, Customer Success, Product, and Marketing on territory strategy"
+        ],
+        "successCriteria": "First deal closed or commit-stage forecast. Healthy pipeline with 4x coverage for the year. Established as a trusted advisor in at least 2 accounts with multi-level relationships."
+      }
+    },
+    "engagementPrinciples": [
+      "Lead with business outcomes, not technology features — every conversation should start with the customer's P&L impact, not Aera's architecture",
+      "Always connect to a specific Decision Intelligence use case — never sell 'the platform' in the abstract; anchor to a named Aera Skill solving a concrete decision problem",
+      "Build multi-threaded relationships (3+ stakeholders minimum) — single-threaded deals die; ensure business, IT, and executive sponsorship in every opportunity",
+      "Quantify everything — pain must have a dollar value, outcomes must have measurable targets, and ROI must be defensible in a CFO conversation",
+      "Demonstrate, don't present — show Aera making real decisions with real data whenever possible; POCs and demos outperform slide decks",
+      "Sell the vision, prove with a wedge — paint the enterprise-wide Decision Intelligence vision but land with a focused, high-impact first use case that delivers value in 90 days",
+      "Create urgency through insight — share data, benchmarks, and competitor examples that make inaction feel costly; the biggest competitor is always 'do nothing'",
+      "Coach the champion, don't just enable them — your champion must be able to sell Aera internally without you in the room; invest heavily in their success",
+      "Respect the customer's time and intelligence — be prepared, be specific, be concise; every interaction should deliver value the customer couldn't get elsewhere",
+      "Think platform, sell SKill — while the initial sale is a specific use case, always position Aera as a platform that grows with the customer's Decision Intelligence maturity"
+    ],
+    "keyMilestones": [
+      {
+        "milestone": "Champion Identified",
+        "typical_timing": "Day 15-30",
+        "validation": "Champion has shared internal org dynamics, introduced you to at least one additional stakeholder, and agreed to advocate for a formal evaluation. Test: will they take your call on a weekend to prep for a Monday meeting?"
+      },
+      {
+        "milestone": "Executive Sponsor Engaged",
+        "typical_timing": "Day 30-45",
+        "validation": "VP or C-level stakeholder has participated in at least one meeting, acknowledged the business problem, and expressed interest in seeing a solution approach. They don't need to be driving the deal yet, but they must be aware and supportive."
+      },
+      {
+        "milestone": "Business Case Defined",
+        "typical_timing": "Day 45-60",
+        "validation": "Quantified business case document exists with current-state costs, projected improvements, and 3-year ROI. The champion and at least one finance stakeholder have reviewed the numbers and agree they are credible."
+      },
+      {
+        "milestone": "POC Scope Agreed",
+        "typical_timing": "Day 45-75",
+        "validation": "Written POC plan with defined scope (1-2 Skills), data requirements, success criteria, timeline (4-8 weeks), and resource commitments from both sides. Customer has assigned a project lead for the POC."
+      },
+      {
+        "milestone": "Technical Validation Complete",
+        "typical_timing": "Day 75-105",
+        "validation": "POC executed with customer data, results documented and exceeding defined success criteria. IT team has validated integration approach, security requirements, and deployment architecture."
+      },
+      {
+        "milestone": "Commercial Terms Agreed",
+        "typical_timing": "Day 90-120",
+        "validation": "Pricing proposal reviewed and accepted in principle by economic buyer. Key commercial terms (scope, pricing, timeline, SLAs) agreed. Only legal/procurement redlines remaining."
+      },
+      {
+        "milestone": "Internal Consensus Achieved",
+        "typical_timing": "Day 100-130",
+        "validation": "All decision-makers and influencers have been briefed. No unresolved objections. Champion confirms: 'If procurement and legal clear, we are go.' Verbal or written confirmation from economic buyer."
+      },
+      {
+        "milestone": "Contract Executed",
+        "typical_timing": "Day 120-150",
+        "validation": "Signed MSA and SOW with defined deployment scope, timeline, mutual success plan, and expansion framework. Finance has confirmed budget allocation."
+      }
+    ]
+  },
+  "riskFramework": {
+    "categories": [
+      {
+        "category": "Organizational",
+        "risks": [
+          {
+            "risk": "No executive sponsor",
+            "indicators": [
+              "All meetings are with director-level or below",
+              "Champion cannot get time on executive calendar",
+              "Business case discussions stall at department level",
+              "No one can confirm budget availability"
+            ],
+            "aeraMitigation": "Request an executive briefing on Decision Intelligence ROI from a similar industry. Leverage Aera's executive network or advisory board for a peer-to-peer conversation. Offer a 30-minute 'Decision Intelligence for the C-Suite' session tailored to their industry with specific ROI benchmarks from comparable deployments.",
+            "severity": "High"
+          },
+          {
+            "risk": "Champion leaves or changes role",
+            "indicators": [
+              "Champion mentions organizational changes or personal career moves",
+              "Responsiveness decreasing over time",
+              "New stakeholders appearing in meetings without context"
+            ],
+            "aeraMitigation": "Always build multi-threaded relationships from Day 1. Maintain at least 3 active stakeholder relationships at different levels. Document all agreements and progress in shared artifacts that survive personnel changes. If champion departs, immediately engage their successor with a concise value summary and request a re-alignment meeting.",
+            "severity": "High"
+          },
+          {
+            "risk": "Organizational restructuring or freeze",
+            "indicators": [
+              "Hiring freezes announced",
+              "Leadership changes in key functions",
+              "Budget reviews or cost-cutting initiatives mentioned",
+              "Decision timelines suddenly extending"
+            ],
+            "aeraMitigation": "Reframe Aera as a cost-reduction and efficiency play that directly supports restructuring goals. Quantify how Decision Intelligence can accelerate cost savings during transformation. Offer a smaller initial scope with faster time-to-value. Connect with whoever is leading the transformation as a potential new sponsor.",
+            "severity": "Medium"
+          },
+          {
+            "risk": "Siloed decision-making — no cross-functional alignment",
+            "indicators": [
+              "Supply chain and finance teams have conflicting priorities",
+              "IT was not included in early conversations",
+              "Different departments running parallel vendor evaluations"
+            ],
+            "aeraMitigation": "Propose a cross-functional Decision Intelligence workshop that brings supply chain, finance, IT, and operations leaders into one room. Use Aera's platform positioning to show how siloed decisions create value leakage. Facilitate alignment by mapping interconnected decision flows across functions.",
+            "severity": "Medium"
+          }
+        ]
+      },
+      {
+        "category": "Technical",
+        "risks": [
+          {
+            "risk": "Data readiness concerns",
+            "indicators": [
+              "Customer mentions data quality issues or incomplete master data",
+              "IT team raises concerns about data extraction timelines",
+              "No clear data governance or ownership in place",
+              "Multiple conflicting data sources for the same metrics"
+            ],
+            "aeraMitigation": "Emphasize Aera's flexible data integration layer that works with imperfect data and improves over time. Propose a data readiness assessment as the first POC phase. Share examples of customers who started with 70% data quality and still achieved significant ROI. Offer Aera's pre-built connectors for common ERP systems (SAP, Oracle) to reduce integration effort.",
+            "severity": "Medium"
+          },
+          {
+            "risk": "IT resistance or competing priorities",
+            "indicators": [
+              "IT team not attending meetings or sending junior staff",
+              "Concerns about 'another platform' adding complexity",
+              "Active ERP migration or cloud transformation consuming IT bandwidth",
+              "Security or compliance reviews cited as blockers"
+            ],
+            "aeraMitigation": "Engage IT early as a partner, not an afterthought. Position Aera as complementary to existing IT investments (enhances SAP/Oracle, not replaces). Provide Aera's security documentation, SOC 2 compliance, and architecture overview proactively. Offer to present at IT architecture review board. Minimize IT burden by leveraging Aera's SaaS deployment and pre-built connectors.",
+            "severity": "Medium"
+          },
+          {
+            "risk": "Integration complexity with legacy systems",
+            "indicators": [
+              "Customer runs heavily customized ERP with non-standard data models",
+              "Multiple legacy systems with no integration layer",
+              "Past integration projects have overrun timelines",
+              "Middleware or ETL tool landscape is fragmented"
+            ],
+            "aeraMitigation": "Highlight Aera's experience integrating with complex enterprise landscapes. Propose a phased integration approach starting with the highest-value data sources. Leverage Aera's pre-built connectors and API-first architecture. Scope the POC to use readily available data to prove value before tackling complex integrations. Offer integration architecture workshop with Aera's technical team.",
+            "severity": "High"
+          },
+          {
+            "risk": "Unrealistic performance or scale expectations",
+            "indicators": [
+              "Customer expects real-time decisioning across millions of SKUs from day one",
+              "Benchmarking Aera against custom-built solutions with years of tuning",
+              "Expecting 99.99% accuracy on forecast models immediately"
+            ],
+            "aeraMitigation": "Set realistic expectations early with a maturity model: crawl (batch insights) -> walk (real-time recommendations) -> run (autonomous execution). Share typical ramp curves from similar deployments. Define POC success criteria that are ambitious but achievable. Position continuous learning as a core Aera capability — the system gets smarter with use.",
+            "severity": "Medium"
+          }
+        ]
+      },
+      {
+        "category": "Competitive",
+        "risks": [
+          {
+            "risk": "Incumbent planning vendor expanding scope",
+            "indicators": [
+              "Customer mentions their existing vendor (SAP IBP, Kinaxis, Blue Yonder) is offering new AI capabilities",
+              "Incumbent running a competitive POC simultaneously",
+              "IT team prefers 'single vendor' strategy",
+              "Existing vendor offering significant discounts to retain account"
+            ],
+            "aeraMitigation": "Differentiate on autonomous execution vs. planning optimization — Aera doesn't just plan, it decides and acts. Highlight the speed advantage: pre-built Skills deliver value in weeks, not the 12-18 month implementation cycles typical of planning suite expansions. Request a head-to-head POC focused on decision speed and autonomous execution, where Aera's architecture has a clear advantage. Provide customer references who switched from or augmented the specific incumbent.",
+            "severity": "High"
+          },
+          {
+            "risk": "Build-your-own AI initiative",
+            "indicators": [
+              "Customer has a data science team building custom ML models",
+              "CTO or CDO championing internal AI platform",
+              "Innovation lab or AI center of excellence exists",
+              "Customer mentions 'we can do this ourselves with our data team'"
+            ],
+            "aeraMitigation": "Acknowledge and respect their AI capabilities. Position Aera as accelerating their Decision Intelligence roadmap by 2-3 years — pre-built Skills vs. building from scratch. Quantify the TCO of build-your-own: data science salaries, infrastructure, maintenance, and the opportunity cost of 18-24 months to production. Offer a co-innovation model where their data science team extends Aera's platform rather than building a parallel solution.",
+            "severity": "Medium"
+          },
+          {
+            "risk": "Consulting firm driving vendor selection",
+            "indicators": [
+              "Big 4 or strategy consulting firm leading digital transformation program",
+              "RFP criteria appear designed around a specific competitor's capabilities",
+              "Customer's evaluation framework doesn't include Decision Intelligence criteria",
+              "Consulting firm has a preferred vendor partnership that excludes Aera"
+            ],
+            "aeraMitigation": "Engage the consulting firm directly — offer partnership and co-implementation model. Request to present Aera's differentiated Decision Intelligence approach to the evaluation committee. Provide industry analyst validation (Gartner, Forrester) that positions Decision Intelligence as a distinct category. If the RFP is biased, work with champion to add evaluation criteria around autonomous execution, time-to-value, and pre-built decision models.",
+            "severity": "Medium"
+          },
+          {
+            "risk": "Do-nothing / status quo inertia",
+            "indicators": [
+              "No compelling event or burning platform identified",
+              "Customer says 'we're managing fine with spreadsheets and existing tools'",
+              "Evaluation keeps getting deprioritized",
+              "Stakeholders reluctant to commit time to POC"
+            ],
+            "aeraMitigation": "Create urgency through quantified cost of inaction — calculate what the customer loses every quarter in excess inventory, missed demand, or slow decisions. Share competitive intelligence: 'Your competitor X is already using Decision Intelligence to gain advantage.' Propose a low-effort, high-insight assessment that reveals hidden decision gaps. Connect to an upcoming event (board meeting, earnings, budget cycle) as a natural forcing function.",
+            "severity": "High"
+          }
+        ]
+      },
+      {
+        "category": "Commercial",
+        "risks": [
+          {
+            "risk": "Budget not allocated or unclear funding source",
+            "indicators": [
+              "Champion cannot confirm budget availability",
+              "Discussion about 'finding budget' from multiple departments",
+              "Evaluation happening outside of normal budget cycle",
+              "No one can explain the purchase approval process"
+            ],
+            "aeraMitigation": "Map the budget landscape early in qualification: Is this OpEx or CapEx? Which cost center? Is there a digital transformation or innovation budget? Help the champion build an internal funding proposal with Aera's ROI model. Offer creative commercial structures: phased deployment, outcome-based pricing, or POC-to-production bridge deals that start small.",
+            "severity": "High"
+          },
+          {
+            "risk": "Procurement delays or excessive legal redlines",
+            "indicators": [
+              "Procurement team introduces new requirements late in the process",
+              "Legal review taking longer than 2 weeks",
+              "Security questionnaire or vendor assessment not yet started",
+              "Customer requesting non-standard contract terms (unlimited liability, source code escrow)"
+            ],
+            "aeraMitigation": "Engage procurement and legal early — share Aera's standard MSA, security documentation, and vendor assessment responses proactively. Maintain a 'pre-approved fallback positions' document for common legal redlines. Escalate to Aera legal for creative solutions on blocking terms. Keep the business sponsor engaged during procurement — they can apply internal pressure if delays threaten project timelines.",
+            "severity": "Medium"
+          },
+          {
+            "risk": "Price sensitivity or ROI skepticism",
+            "indicators": [
+              "Customer pushing back on pricing without engaging on value",
+              "Comparing Aera's platform pricing to point solution or open-source alternatives",
+              "Finance team requesting unrealistic payback period (< 6 months)",
+              "Customer wants guaranteed ROI in the contract"
+            ],
+            "aeraMitigation": "Anchor all pricing discussions to the quantified business case — show the ratio of Aera investment to expected value delivery. Provide tiered deployment options: start with a single Skill at lower cost, expand as value is proven. Share customer case studies with documented ROI and payback periods. Offer a value-based pricing component where a portion of fees is tied to achieved outcomes.",
+            "severity": "Medium"
+          },
+          {
+            "risk": "Scope creep during negotiation",
+            "indicators": [
+              "Customer adding requirements that were not in the POC or solution design",
+              "Multiple departments trying to add use cases before initial contract is signed",
+              "Requests for custom development or professional services bundling",
+              "Timeline pressure to include everything in phase one"
+            ],
+            "aeraMitigation": "Hold firm on the phased approach: initial contract scoped to proven POC use case with contractual expansion framework for future Skills. Show the customer the risk of over-scoping: longer implementation, delayed value, higher change management burden. Offer a roadmap document as part of the SOW that commits to evaluating expansion use cases at defined milestones. Use expansion as a positive — 'there is so much more value to unlock' — without letting it delay the initial close.",
+            "severity": "Medium"
+          }
+        ]
+      },
+      {
+        "category": "Timeline",
+        "risks": [
+          {
+            "risk": "Extended evaluation cycle (> 6 months)",
+            "indicators": [
+              "Multiple stakeholders requesting additional demos or presentations",
+              "Evaluation committee keeps expanding",
+              "RFP process with multiple rounds",
+              "Customer unable to commit to POC dates"
+            ],
+            "aeraMitigation": "Create urgency by tying the decision to a business event: budget cycle, board meeting, seasonal demand peak. Propose a parallel-path approach: begin POC while evaluation continues to build momentum. Show the cost of delay with a 'value erosion' model — every quarter of delayed deployment is $X in unrealized savings. Simplify the evaluation by offering a focused POC instead of an extended RFP process.",
+            "severity": "Medium"
+          },
+          {
+            "risk": "Quarter-end deal slip",
+            "indicators": [
+              "Key decision-maker unavailable during critical period",
+              "Legal or procurement review not completed",
+              "Champion unable to get final approval meeting scheduled",
+              "Last-minute requirements or concerns raised"
+            ],
+            "aeraMitigation": "Build a mutual close plan with specific dates for each step (legal review, security review, final approval, signature). Work backwards from the desired close date with 2-week buffer. Offer time-limited commercial incentives for quarter-end commitment. Ensure champion has all materials needed to get final approval without another meeting. Have Aera executives available for peer-to-peer calls to resolve executive-level concerns quickly.",
+            "severity": "High"
+          },
+          {
+            "risk": "POC timeline overrun",
+            "indicators": [
+              "Data integration taking longer than planned",
+              "Customer resources not available as committed",
+              "Scope expanding beyond original POC definition",
+              "Weekly review meetings being skipped or postponed"
+            ],
+            "aeraMitigation": "Define POC governance upfront: weekly reviews are mandatory, scope changes require written approval, and there is a hard end date. Front-load data integration work — start data onboarding before POC officially kicks off. Have a 'Plan B' dataset ready if primary data source is delayed. Escalate resource gaps to the champion and economic buyer immediately — do not let them linger.",
+            "severity": "Medium"
+          },
+          {
+            "risk": "Fiscal year or budget cycle misalignment",
+            "indicators": [
+              "Customer's fiscal year ends in a different quarter than expected",
+              "Budget for current year already allocated",
+              "Customer requesting to start evaluation now but purchase next fiscal year",
+              "New budget approvals required for unplanned expenditure"
+            ],
+            "aeraMitigation": "Understand the customer's fiscal calendar in the first discovery meeting. If budget is not available this year, propose a paid POC or pilot that uses current-year discretionary budget and leads to a full deployment purchase in the next fiscal year. Help the champion get Aera included in next year's budget planning with a business case and budget request template. Offer flexible billing terms: sign now, start billing in the new fiscal year.",
+            "severity": "Medium"
+          }
+        ]
+      }
+    ]
+  },
+  "objectionHandling": [
+    {
+      "objection": "We already have SAP IBP / Kinaxis / Blue Yonder for planning",
+      "response": "Aera complements your existing planning tools by adding a Decision Intelligence layer that goes beyond planning into autonomous decision-making. Your current system generates plans — Aera senses changes in real time, thinks about the optimal response, and can execute decisions automatically. We don't replace your ERP or planning investment; we make it dramatically more responsive and intelligent.",
+      "proofPoints": [
+        "Customer example: A Global 500 CPG company runs Aera alongside SAP IBP and reduced excess inventory by 25% by detecting demand shifts that batch planning missed",
+        "Benchmark: Aera customers report 60-80% faster decision cycle times compared to traditional planning workflows"
+      ]
+    },
+    {
+      "objection": "We can build this ourselves with our data science team",
+      "response": "Your data science team is talented, but building an enterprise-grade Decision Intelligence platform from scratch typically takes 2-3 years and $5-10M+ in investment — and then you still need to maintain, scale, and evolve it. Aera's pre-built Skills give you production-ready decision models in weeks, not years, and our platform handles the hard parts: real-time data integration, explainable AI, and closed-loop execution at global scale. Many of our customers started by building internally and then chose Aera to accelerate and scale.",
+      "proofPoints": [
+        "TCO analysis: Build-your-own Decision Intelligence costs 3-5x more over 3 years when including data engineering, infrastructure, and ongoing maintenance",
+        "Customer example: A leading pharmaceutical company spent 18 months building a custom demand sensing model before switching to Aera and going live in 8 weeks"
+      ]
+    },
+    {
+      "objection": "We're in the middle of a major ERP / cloud transformation and can't take on another initiative",
+      "response": "This is actually the ideal time to deploy Aera. ERP transformations focus on the transaction backbone — they don't solve the decision intelligence gap. Aera can run on top of your current systems today and seamlessly transition to your new ERP architecture. Starting now means you'll have Decision Intelligence ready to maximize the value of your ERP investment from day one, rather than waiting another 2-3 years post-go-live.",
+      "proofPoints": [
+        "Customer example: A Fortune 100 manufacturer deployed Aera during their SAP S/4HANA migration, using Aera to bridge decision gaps during the transition and then connecting natively to S/4 post-migration",
+        "Aera's cloud-native, API-first architecture means no dependency on specific ERP versions or deployment models"
+      ]
+    },
+    {
+      "objection": "The ROI is hard to quantify or believe",
+      "response": "We agree that ROI claims need to be grounded in reality — that's exactly why we structure every engagement around a POC with your data and measurable success criteria. Before you commit to anything beyond a focused evaluation, Aera will demonstrate quantified results in your environment with your actual business data. Our typical customers see 2-5% reduction in inventory carrying costs and $5-50M in working capital improvement — but we'll prove it with your numbers, not ours.",
+      "proofPoints": [
+        "POC track record: 85%+ of Aera POCs convert to full deployment because the results speak for themselves",
+        "Value framework: Aera provides a detailed ROI model built with your finance team using your actual cost structure and decision volumes"
+      ]
+    },
+    {
+      "objection": "AI/ML is still a black box — our leadership won't trust automated decisions",
+      "response": "This is one of the most important objections, and it's exactly why Aera built Explainable AI into the core of the platform. Every recommendation Aera makes comes with a clear explanation of why — what data drove the decision, what alternatives were considered, and what the expected impact is. You can start with AI-assisted decisions where humans approve each recommendation, and gradually move to autonomous execution as trust builds. Your team stays in control at every step.",
+      "proofPoints": [
+        "Aera's explainability engine provides natural-language reasoning for every decision, auditable by business users without data science expertise",
+        "Customer example: A global retailer started with human-in-the-loop approval for all Aera recommendations and moved to 70% autonomous execution within 6 months as confidence grew"
+      ]
+    },
+    {
+      "objection": "We don't have the data quality or infrastructure for AI",
+      "response": "This is a common concern, but perfection is the enemy of progress. Aera is designed to work with real-world enterprise data — including the messy, incomplete, multi-source data that every large company has. Our data integration layer handles data cleansing, reconciliation, and enrichment. Most customers start with 70-80% data quality and see improvements as Aera's learning models identify and flag data issues. The POC phase specifically tests data readiness and integration feasibility.",
+      "proofPoints": [
+        "Aera's pre-built connectors for SAP, Oracle, and other major platforms reduce data integration from months to weeks",
+        "Customer example: A manufacturer with notoriously fragmented data across 40+ plants deployed Aera's Demand Sensing Skill in 6 weeks, starting with their highest-quality data sources and expanding progressively"
+      ]
+    },
+    {
+      "objection": "The timing isn't right / we'll look at this next year",
+      "response": "I understand competing priorities, but consider what another year of manual, slow decision-making costs. Every quarter of delay means continued excess inventory, missed demand signals, and suboptimal resource allocation. Your competitors aren't waiting — Decision Intelligence is rapidly becoming table stakes for Global 2000 operations. We can start small with a focused assessment that requires minimal time investment but gives you a clear picture of the opportunity. That way, when the timing is right, you're ready to move fast.",
+      "proofPoints": [
+        "Cost of delay model: Based on your revenue, a conservative estimate of $X per quarter in unrealized efficiency gains (customize based on account data)",
+        "Market trend: Gartner predicts 60% of Global 2000 companies will have deployed Decision Intelligence capabilities by 2027"
+      ]
+    },
+    {
+      "objection": "Your platform seems expensive compared to point solutions",
+      "response": "If you compare Aera to a single-function tool, the price point is different — because the value is fundamentally different. Aera is a platform that replaces the need for 5-10 point solutions, each with their own integration costs, maintenance overhead, and data silos. When you factor in total cost of ownership — implementation, integration, maintenance, and the compounding value of cross-functional decision intelligence — Aera typically delivers 3-5x better ROI than a portfolio of point solutions. Plus, you deploy once and expand across use cases.",
+      "proofPoints": [
+        "TCO comparison: Aera platform vs. 3-4 point solutions shows 40-60% lower total cost over 3 years when including integration and maintenance",
+        "Customer example: A hi-tech company consolidated 6 separate demand sensing, inventory, and pricing tools into Aera, reducing software spend by 35% while improving decision speed"
+      ]
+    }
+  ],
+  "competitivePositioning": {
+    "vsPointSolutions": "Point solutions solve one decision problem in one function — Aera connects decisions across supply chain, finance, procurement, and commercial operations. When you optimize inventory independently from demand sensing and pricing, you get local optima that leave money on the table. Aera's platform approach means every decision is informed by the full operational picture, and you deploy once rather than integrating 5-10 separate tools.",
+    "vsBigConsulting": "Consulting firms bring frameworks and recommendations that take 6-12 months to deliver and depend on your team to implement. Aera delivers a working Decision Intelligence platform that makes recommendations autonomously, learns continuously, and executes decisions in real time. Consulting gives you a plan; Aera gives you a self-improving decision engine. Many customers engage Aera after consulting projects identified the opportunity but couldn't deliver lasting, automated capability.",
+    "vsBuildYourOwn": "Internal teams building custom AI decision systems face a 2-3 year development cycle, ongoing maintenance burden, and the challenge of scaling from prototype to production. Aera's pre-built Skills compress that timeline to weeks, our platform handles the hard infrastructure problems (real-time data, global scale, explainability), and your data science team can focus on extending the platform rather than rebuilding commodity capabilities. The build vs. buy math strongly favors Aera when you include fully-loaded TCO over 3 years.",
+    "vsERPVendorAI": "ERP vendors like SAP and Oracle are adding AI features to their planning modules, but these are incremental improvements to batch-driven planning processes — not a fundamental shift to autonomous Decision Intelligence. Aera operates as an independent layer that ingests data from any ERP, applies Decision Intelligence across functions, and executes decisions in real time. You get vendor-neutral intelligence that works across your entire technology landscape, not AI that's trapped inside one vendor's ecosystem.",
+    "keyDifferentiators": [
+      "Real-time autonomous decisioning: Aera senses changes in real time and can execute decisions without human intervention — not batch planning that's outdated by the time it's reviewed",
+      "Closed-loop execution: Aera doesn't just recommend — it acts. Decisions flow from insight to execution automatically, closing the gap between knowing and doing",
+      "Pre-built Decision Skills: Production-ready decision models for supply chain, finance, procurement, and commercial use cases. Deploy in weeks, not years",
+      "Explainable AI at the core: Every decision comes with natural-language reasoning that business users can understand, audit, and trust. Not a black box",
+      "Enterprise platform, not a point solution: Single Decision Intelligence layer that connects decisions across the entire operation. Deploy one use case and expand to many",
+      "Vendor-neutral architecture: Works with any ERP (SAP, Oracle, etc.), any data source, any cloud. No lock-in, no rip-and-replace required"
+    ]
+  }
+}

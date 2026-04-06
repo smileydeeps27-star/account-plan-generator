@@ -2,6 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', function() {
   AP.SellerProfile.load();
+  AP.Methodology.load();
   initHomeScreen();
   initGeneratingScreen();
   initPlanScreen();
@@ -22,10 +23,18 @@ function initHomeScreen() {
     var industry = document.getElementById('input-industry').value;
     var revenue = document.getElementById('input-revenue').value;
 
+    var userInputs = {
+      dealStage: document.getElementById('input-deal-stage').value,
+      accountContext: document.getElementById('input-context').value.trim(),
+      suspectedCompetitors: document.getElementById('input-competitors').value.trim(),
+      goalsNext90Days: document.getElementById('input-goals').value.trim(),
+      knownRisks: document.getElementById('input-risks').value.trim()
+    };
+
     AP.AppStore.set('isGenerating', true);
     AP.navigateTo('generating');
 
-    AP.PlanGenerator.generate(company, industry, revenue).then(function(plan) {
+    AP.PlanGenerator.generate(company, industry, revenue, userInputs).then(function(plan) {
       AP.AppStore.set('currentPlan', plan);
       AP.AppStore.set('isGenerating', false);
       AP.navigateTo('plan');
@@ -112,6 +121,73 @@ function initPlanScreen() {
       AP.navigateTo('home');
     }
   });
+
+  // Meeting notes modal
+  var modal = document.getElementById('meeting-notes-modal');
+  var notesInput = document.getElementById('meeting-notes-input');
+
+  function openNotesModal() {
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  function closeNotesModal() {
+    if (modal) modal.classList.add('hidden');
+    if (notesInput) notesInput.value = '';
+  }
+
+  // Open modal when "Update from Meeting" button is clicked
+  document.addEventListener('click', function(e) {
+    if (e.target.id === 'btn-meeting-notes' || e.target.closest('#btn-meeting-notes')) {
+      openNotesModal();
+    }
+  });
+
+  // Close modal
+  var btnClose = document.getElementById('btn-close-notes');
+  var btnCancel = document.getElementById('btn-cancel-notes');
+  if (btnClose) btnClose.addEventListener('click', closeNotesModal);
+  if (btnCancel) btnCancel.addEventListener('click', closeNotesModal);
+
+  // Close modal on backdrop click
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) closeNotesModal();
+    });
+  }
+
+  // Refresh plan from meeting notes
+  var btnRefresh = document.getElementById('btn-refresh-plan');
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', function() {
+      var notes = notesInput ? notesInput.value.trim() : '';
+      if (!notes) {
+        AP.showToast('Please enter meeting notes first.', 'error');
+        return;
+      }
+
+      var plan = AP.AppStore.get('currentPlan');
+      if (!plan) {
+        AP.showToast('No plan loaded to refresh.', 'error');
+        return;
+      }
+
+      btnRefresh.disabled = true;
+      btnRefresh.textContent = 'Refreshing...';
+
+      AP.PlanRefresh.refreshFromNotes(plan, notes).then(function(updatedPlan) {
+        AP.AppStore.set('currentPlan', updatedPlan);
+        AP.PlanRenderer.render(updatedPlan);
+        closeNotesModal();
+        AP.showToast('Plan updated from meeting notes!');
+      }).catch(function(err) {
+        AP.showToast('Refresh failed: ' + err.message, 'error');
+        console.error('Plan refresh error:', err);
+      }).finally(function() {
+        btnRefresh.disabled = false;
+        btnRefresh.innerHTML = '&#128260; Refresh Plan';
+      });
+    });
+  }
 }
 
 /* --- Settings Screen --- */

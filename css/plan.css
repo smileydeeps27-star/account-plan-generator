@@ -456,6 +456,106 @@
   background: rgba(99, 102, 241, 0.03);
 }
 
+/* ===== Subsection Label ===== */
+.subsection-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+}
+
+/* ===== Section Text ===== */
+.section-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ===== Callouts ===== */
+.callout {
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+.callout-info { background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.15); }
+.callout-success { background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.15); }
+.callout-warn { background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.15); }
+.mb-16 { margin-bottom: 16px; }
+.mt-16 { margin-top: 16px; }
+
+/* ===== Technology Landscape ===== */
+.tech-category { margin-bottom: 24px; }
+.tech-category-title { font-size: 14px; font-weight: 700; color: var(--accent-primary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+.tech-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.tech-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.tech-card:hover { border-color: var(--border-hover); }
+.tech-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 8px; }
+.tech-vendor { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.tech-product { font-size: 12px; color: var(--accent-primary); margin-bottom: 4px; }
+.tech-evidence { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+/* ===== Stakeholder Cards ===== */
+.stakeholder-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 12px; }
+.stakeholder-card:hover { border-color: var(--border-hover); }
+.stakeholder-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+.stakeholder-name { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-right: 10px; }
+.stakeholder-title { font-size: 13px; color: var(--text-secondary); }
+.stakeholder-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.stakeholder-notes { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 10px; }
+.stakeholder-engagement { background: rgba(99, 102, 241, 0.04); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; }
+.engagement-label { font-size: 10px; font-weight: 700; color: var(--accent-primary); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+.engagement-text { font-size: 13px; color: var(--text-primary); line-height: 1.5; }
+.stakeholder-quotes { margin-top: 8px; }
+.stakeholder-quote { border-left: 3px solid var(--accent-purple); padding: 8px 14px; margin: 6px 0; background: rgba(168, 85, 247, 0.04); border-radius: 0 var(--radius) var(--radius) 0; }
+.stakeholder-quote p { font-size: 13px; color: var(--text-primary); line-height: 1.5; font-style: italic; margin: 0; }
+.stakeholder-quote cite { font-size: 11px; color: var(--text-muted); font-style: normal; display: block; margin-top: 4px; }
+.role-badge.gatekeeper { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
+
+/* ===== Competitor Cards ===== */
+.competitor-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 12px; }
+.competitor-card:hover { border-color: var(--border-hover); }
+.competitor-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+.competitor-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.competitor-badges { display: flex; gap: 6px; }
+.competitor-section { margin-bottom: 8px; }
+.competitor-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px; }
+.competitor-section > div:last-child { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.competitor-battlecard { background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.12); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: var(--text-primary); line-height: 1.5; margin-top: 8px; }
+
+/* ===== Strategy Sections ===== */
+.strategy-section { margin-bottom: 20px; }
+.key-messages-list { list-style: decimal; padding-left: 20px; }
+.key-messages-list li { padding: 6px 0; font-size: 14px; color: var(--text-primary); line-height: 1.5; }
+
+/* ===== Risk Cards ===== */
+.risk-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; margin-bottom: 12px; }
+.risk-card:hover { border-color: var(--border-hover); }
+.risk-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+.risk-title { font-size: 14px; font-weight: 700; color: var(--text-primary); flex: 1; }
+.risk-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.risk-severity { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.risk-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.04); }
+.risk-mitigation { font-size: 13px; color: var(--text-secondary); line-height: 1.6; padding: 10px 14px; background: rgba(16, 185, 129, 0.04); border-radius: var(--radius); border-left: 3px solid rgba(16, 185, 129, 0.3); }
+
+/* ===== Next 5 Steps ===== */
+.next-steps-list { display: flex; flex-direction: column; gap: 10px; }
+.next-step-item { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+.next-step-item:hover { border-color: var(--border-hover); }
+.next-step-number { width: 30px; height: 30px; border-radius: 50%; background: var(--gradient-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+.next-step-content { flex: 1; }
+.next-step-action { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.next-step-meta { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); }
+
+/* ===== WGLL Callout ===== */
+.wgll { margin-bottom: 12px; }
+
+/* ===== Phase Badge d90 ===== */
+.phase-badge.d90 { background: rgba(239, 68, 68, 0.12); color: var(--accent-red); }
+
 /* ===== Export Bar ===== */
 .export-bar {
   display: flex;
