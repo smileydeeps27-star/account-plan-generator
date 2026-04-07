@@ -1,0 +1,176 @@
+{
+  "lastUpdated": "2026-04-06",
+  "events": [
+    {
+      "title": "Gartner Supply Chain Symposium | Xpo",
+      "date": "May 4-6, 2026",
+      "location": "Orlando",
+      "type": "Conference",
+      "url": "https://meet.aeratechnology.com/gartner-supply-chain-symposium-may-4-6",
+      "description": "Meet Aera at the premier supply chain conference. See how Decision Intelligence is transforming planning and execution."
+    },
+    {
+      "title": "Gartner Supply Chain Symposium | Xpo EMEA",
+      "date": "May 18, 2026",
+      "location": "Barcelona",
+      "type": "Conference",
+      "url": "https://www.gartner.com/en/conferences/emea/supply-chain-spain",
+      "description": "Connect with Aera at Gartner's European supply chain event."
+    },
+    {
+      "title": "North American Supply Chain Executive Summit",
+      "date": "September 23, 2026",
+      "location": "Las Vegas",
+      "type": "Summit",
+      "url": "https://www.executiveplatforms.com/nasces/",
+      "description": "Premier gathering for supply chain leaders exploring innovative strategies and emerging trends."
+    },
+    {
+      "title": "Gartner Supply Chain Planning Summit",
+      "date": "October 5, 2026",
+      "location": "London",
+      "type": "Conference",
+      "url": "https://www.gartner.com/en/conferences/emea/supply-chain-planning-uk",
+      "description": "Discover actionable strategies and harness new technologies for supply chain planning."
+    },
+    {
+      "title": "Gartner IT Symposium",
+      "date": "October 19, 2026",
+      "location": "Orlando",
+      "type": "Conference",
+      "url": "https://www.gartner.com/en/conferences/na/symposium-us",
+      "description": "The world's most important gathering of CIOs and IT executives."
+    },
+    {
+      "title": "AeraHUB 26 — The Decision Intelligence Summit",
+      "date": "October 27, 2026",
+      "location": "New York City & Virtual",
+      "type": "Summit",
+      "url": "https://events.aeratechnology.com/save-the-date-aerahub-26-the-decision-intelligence-summit/",
+      "description": "Aera's flagship event — elevated, expanded, and set in the heart of NYC. Join innovators deploying AI to automate business decisions."
+    }
+  ],
+  "whitepapers": [
+    {
+      "title": "The AI Advantage for Electronics Manufacturing: Making Faster, Better Decisions at Scale",
+      "date": "2026-04-05",
+      "url": "https://meet.aeratechnology.com/whitepaper-the-ai-advantage-for-electronics-manufacturing",
+      "industries": ["Manufacturing", "Electronics"],
+      "topics": ["AI", "Decision Intelligence", "Operations"]
+    },
+    {
+      "title": "Agentic Decision Intelligence for the Dairy Industry",
+      "date": "2026-03-30",
+      "url": "https://meet.aeratechnology.com/agentic-decision-intelligence-for-the-dairy-industry",
+      "industries": ["CPG", "Food & Beverage", "Dairy"],
+      "topics": ["Forecasting", "Inventory", "Waste Reduction"]
+    },
+    {
+      "title": "The Executive's Blueprint for Scaling Agentic AI",
+      "date": "2026-03-10",
+      "url": "https://meet.aeratechnology.com/whitepaper-the-executives-blueprint-for-scaling-agentic-ai",
+      "industries": ["Cross-Industry"],
+      "topics": ["Agentic AI", "CIO", "CSCO", "Scaling AI"]
+    },
+    {
+      "title": "The Executive's Playbook for Agentic AI: Turning Strategy into Execution",
+      "date": "2026-02-25",
+      "url": "https://meet.aeratechnology.com/the-executives-playbook-for-agentic-ai-turning-strategy-into-execution-with-decision-intelligence",
+      "industries": ["Cross-Industry"],
+      "topics": ["Strategy", "Execution", "Autonomous Decision-Making"]
+    },
+    {
+      "title": "Transforming Demand Planning with AI Agents",
+      "date": "2025-12-05",
+      "url": "https://meet.aeratechnology.com/transforming-demand-planning-with-ai-agents",
+      "industries": ["Cross-Industry"],
+      "topics": ["Demand Planning", "AI Agents", "Forecasting"]
+    }
+  ],
+  "customerStories": [
+    {
+      "customer": "Alcon",
+      "title": "Transforming Logistics Operations with Decision Intelligence",
+      "url": "https://meet.aeratechnology.com/alcon-transforming-logistics-operations-with-decision-intelligence",
+      "industry": "Healthcare / Medical Devices",
+      "useCase": "Order confirmation, inventory management, scheduling coordination"
+    },
+    {
+      "customer": "Coca-Cola Southwest Beverages",
+      "title": "Preventing Stockouts at Scale",
+      "url": "https://meet.aeratechnology.com/coca-cola-southwest-beverages-preventing-stockouts-at-scale",
+      "industry": "CPG / Beverages",
+      "useCase": "Stockout prevention, demand sensing"
+    },
+    {
+      "customer": "Castrol (bp)",
+      "title": "Scaling Decision Intelligence for Real Results",
+      "url": "https://meet.aeratechnology.com/bp-castrol-scaling-decision-intelligence-for-real-results",
+      "industry": "Energy / Chemicals",
+      "useCase": "Agility improvement, working capital optimization"
+    },
+    {
+      "customer": "Hershey",
+      "title": "Deploying AI Decision-Making to Solve Supply Chain Disruptions",
+      "url": "https://www.aeratechnology.com/blogs/agentic-decision-intelligence-the-next-evolution-in-autonomous-decisions/",
+      "industry": "CPG / Food",
+      "useCase": "Supply chain disruption response, demand planning"
+    }
+  ],
+  "analystRecognition": [
+    {
+      "title": "Named a Leader in the 2026 Gartner Magic Quadrant for Decision Intelligence Platforms",
+      "date": "2026-01-29",
+      "url": "https://www.aeratechnology.com/gartner-magic-quadrant-decision-intelligence-leader",
+      "type": "Gartner"
+    },
+    {
+      "title": "Ranked High in Gartner Critical Capabilities for Decision Intelligence Platforms",
+      "date": "2026-02-02",
+      "url": "https://www.aeratechnology.com/gartner-critical-capabilities-decision-intelligence",
+      "type": "Gartner"
+    },
+    {
+      "title": "Named to The Hackett Group 2025-2026 '50 to Watch' List for Procurement Innovation",
+      "date": "2026-02-25",
+      "url": "https://www.aeratechnology.com/news/aera-technology-named-to-the-hackett-group-2025-2026-50-to-watch-list-for-procurement-innovation/",
+      "type": "Hackett Group"
+    },
+    {
+      "title": "Recognized on Constellation ShortList for Decision Automation",
+      "date": "2026-03-18",
+      "url": "https://www.aeratechnology.com/news/aera-technology-recognized-on-constellation-shortlist-for-decision-automation/",
+      "type": "Constellation Research"
+    }
+  ],
+  "blogs": [
+    {
+      "title": "In Dairy Supply Chains, Execution Speed Is Becoming the Competitive Edge",
+      "date": "2026-03-31",
+      "url": "https://www.aeratechnology.com/blogs/in-dairy-supply-chains-execution-speed-is-becoming-the-competitive-edge/",
+      "topics": ["Supply Chain", "CPG", "Execution"]
+    },
+    {
+      "title": "Scaling Agentic AI Requires More Than Agents. It Requires a Platform.",
+      "date": "2026-03-10",
+      "url": "https://www.aeratechnology.com/blogs/scaling-agentic-ai-requires-more-than-agents-it-requires-a-platform/",
+      "topics": ["Agentic AI", "Platform", "Enterprise"]
+    },
+    {
+      "title": "From Reactive to Autonomous — The Agentic Shift in Supply Chain Risk Management",
+      "date": "2026-02-12",
+      "url": "https://www.aeratechnology.com/blogs/from-reactive-to-autonomous-the-agentic-shift-in-supply-chain-risk-management/",
+      "topics": ["Supply Chain", "Risk Management", "Autonomous"]
+    },
+    {
+      "title": "Agentic AI Is Moving Fast. Enterprise Value Depends on What Comes Next.",
+      "date": "2026-02-25",
+      "url": "https://www.aeratechnology.com/blogs/agentic-ai-is-moving-fast-enterprise-value-depends-on-what-comes-next/",
+      "topics": ["Agentic AI", "Enterprise", "Strategy"]
+    }
+  ],
+  "demo": {
+    "url": "https://www.aeratechnology.com/demo",
+    "description": "Schedule a personalized demo of the Aera Decision Cloud"
+  }
+}

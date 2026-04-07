@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', function() {
   AP.SellerProfile.load();
   AP.Methodology.load();
+  AP.AeraContent.load();
   initHomeScreen();
   initGeneratingScreen();
   initPlanScreen();

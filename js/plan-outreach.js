@@ -94,6 +94,8 @@ AP.PlanOutreach = (function() {
       }).join('\n') + '\n';
     }
 
+    var aeraContent = AP.AeraContent ? AP.AeraContent.getContextString() : '';
+
     // Build selections block
     var selectionsBlock = '\n--- EMAILS TO GENERATE ---\n';
     selections.forEach(function(sel, i) {
@@ -115,7 +117,20 @@ AP.PlanOutreach = (function() {
 
     var systemPrompt = 'You are a world-class B2B sales email copywriter at ' + sellerName + '. Write highly personalized outreach emails.\n\nReturn ONLY valid JSON — no markdown fences, no explanation outside the JSON.' + sellerCtx;
 
-    var userMessage = companyContext + '\n' + strategyContext + '\n' + valuePitch + '\n' + diContext + '\n' + techContext + '\n' + newsContext + '\n' + selectionsBlock +
+    var aeraContentBlock = '';
+    if (aeraContent) {
+      aeraContentBlock = '\nAERA CONTENT & EVENTS (use these in emails — include real URLs):\n' + aeraContent + '\n\n' +
+        'IMPORTANT CONTENT RULES:\n' +
+        '- For "Event Invite" emails: Reference a specific upcoming event with its date, location, and registration URL\n' +
+        '- For "Insight Share" emails: Reference a specific whitepaper or blog with its URL\n' +
+        '- For "Cold Intro" emails: Mention Gartner Leader status and a relevant customer story\n' +
+        '- For "Executive Briefing Request" emails: Reference relevant analyst recognition and propose a specific topic\n' +
+        '- For "Follow-up" emails: Attach a relevant whitepaper or blog link as a value-add\n' +
+        '- ALWAYS include the actual URL when referencing content\n' +
+        '- Pick the MOST RELEVANT content for each stakeholder\'s role and industry\n';
+    }
+
+    var userMessage = companyContext + '\n' + strategyContext + '\n' + valuePitch + '\n' + diContext + '\n' + techContext + '\n' + newsContext + '\n' + aeraContentBlock + '\n' + selectionsBlock +
       '\n--- INSTRUCTIONS ---\n' +
       'Generate one email per recipient above. Follow these rules:\n' +
       '- Each email under 150 words\n' +
