@@ -782,6 +782,135 @@
   display: block;
 }
 
+/* ===== Outreach ===== */
+.outreach-stakeholder-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.outreach-stakeholder-card input[type="checkbox"] {
+  margin-top: 4px;
+  accent-color: var(--accent-primary);
+}
+
+.outreach-stakeholder-info {
+  flex: 1;
+}
+
+.outreach-stakeholder-info .name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.outreach-stakeholder-info .title {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.outreach-controls {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.outreach-controls select {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.outreach-controls textarea {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  resize: vertical;
+  min-height: 32px;
+  width: 200px;
+}
+
+.outreach-email-card {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.outreach-email-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.outreach-email-recipient {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.outreach-email-type {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--accent-primary);
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.outreach-email-card input[type="text"] {
+  width: 100%;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+}
+
+.outreach-email-card textarea {
+  width: 100%;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.outreach-email-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.outreach-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
 @media (max-width: 768px) {
   .plan-header { flex-direction: column; }
   .plan-header-actions { width: 100%; }

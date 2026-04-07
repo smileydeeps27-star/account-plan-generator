@@ -44,7 +44,8 @@ AP.PlanRenderer = (function() {
       { id: 'plan', label: '30-60-90' },
       { id: 'risks', label: 'Risks' },
       { id: 'actions', label: 'Actions' },
-      { id: 'meetingnotes', label: 'Notes' }
+      { id: 'meetingnotes', label: 'Notes' },
+      { id: 'outreach', label: 'Outreach' }
     ];
 
     html += '<div class="plan-tabs-wrapper">';
@@ -70,6 +71,7 @@ AP.PlanRenderer = (function() {
     html += renderRisksMetrics(plan);
     html += renderActionTracker(plan);
     html += renderMeetingNotes(plan);
+    html += renderOutreach(plan);
 
     container.innerHTML = html;
 
@@ -718,6 +720,49 @@ AP.PlanRenderer = (function() {
     return html;
   }
 
+  // ===== MODULE 13: Outreach =====
+  function renderOutreach(plan) {
+    var stakeholders = plan.stakeholders || [];
+    var emailTypes = ['Cold Intro', 'Insight Share', 'Executive Briefing Request', 'Event Invite', 'Follow-up'];
+
+    var html = '<div id="panel-outreach" class="plan-panel">';
+    html += '<h3 class="section-title">Outreach Campaign Builder</h3>';
+    html += '<p class="text-muted mb-16">Select stakeholders and email types, then generate personalized outreach emails powered by AI.</p>';
+
+    if (stakeholders.length === 0) {
+      html += '<p class="text-muted">No stakeholders available. Generate a plan first to populate stakeholders.</p>';
+    } else {
+      // Stakeholder selection cards
+      stakeholders.forEach(function(s, i) {
+        var isHigh = (s.relevance || '').toLowerCase() === 'high';
+        html += '<div class="outreach-stakeholder-card">';
+        html += '<input type="checkbox" class="outreach-check" data-index="' + i + '"' + (isHigh ? ' checked' : '') + '>';
+        html += '<div class="outreach-stakeholder-info">';
+        html += '<div class="name">' + e(s.name) + '</div>';
+        html += '<div class="title">' + e(s.title) + '</div>';
+        html += '</div>';
+        html += '<div class="outreach-controls">';
+        html += '<select class="outreach-email-type" data-index="' + i + '">';
+        emailTypes.forEach(function(t) {
+          html += '<option value="' + e(t) + '">' + e(t) + '</option>';
+        });
+        html += '</select>';
+        html += '<textarea class="outreach-context" data-index="' + i + '" rows="1" placeholder="Add personal context..."></textarea>';
+        html += '</div>';
+        html += '</div>';
+      });
+
+      html += '<button id="btn-generate-emails" class="btn btn-primary" style="margin-top:16px;">Generate Emails</button>';
+    }
+
+    // Results area
+    html += '<div id="outreach-results" style="display:none; margin-top:24px;">';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
   // ===== Wire Action Buttons =====
   function wireActions(plan) {
     var saveBtn = document.getElementById('btn-save-plan');
@@ -889,6 +934,98 @@ AP.PlanRenderer = (function() {
         }
       });
     });
+
+    // ===== Outreach Wiring =====
+    var generateEmailsBtn = document.getElementById('btn-generate-emails');
+    if (generateEmailsBtn) {
+      generateEmailsBtn.addEventListener('click', function() {
+        var stakeholders = plan.stakeholders || [];
+        var selections = [];
+
+        document.querySelectorAll('.outreach-check').forEach(function(cb) {
+          if (!cb.checked) return;
+          var idx = parseInt(cb.dataset.index, 10);
+          var stakeholder = stakeholders[idx];
+          if (!stakeholder) return;
+          var typeEl = document.querySelector('.outreach-email-type[data-index="' + idx + '"]');
+          var ctxEl = document.querySelector('.outreach-context[data-index="' + idx + '"]');
+          selections.push({
+            stakeholder: stakeholder,
+            emailType: typeEl ? typeEl.value : 'Cold Intro',
+            customContext: ctxEl ? ctxEl.value.trim() : ''
+          });
+        });
+
+        if (selections.length === 0) {
+          AP.showToast('Please select at least one stakeholder', 'error');
+          return;
+        }
+
+        generateEmailsBtn.disabled = true;
+        generateEmailsBtn.textContent = 'Generating...';
+
+        AP.PlanOutreach.generateEmails(plan, selections).then(function(emails) {
+          var resultsDiv = document.getElementById('outreach-results');
+          if (!resultsDiv) return;
+
+          var rhtml = '<div class="outreach-results-header">';
+          rhtml += '<h3 class="section-title">Generated Emails (' + emails.length + ')</h3>';
+          rhtml += '<button class="btn btn-sm btn-secondary" id="btn-copy-all-emails">Copy All</button>';
+          rhtml += '</div>';
+
+          emails.forEach(function(em, i) {
+            var bodyText = (em.body || '').replace(/\\n/g, '\n');
+            rhtml += '<div class="outreach-email-card" data-email-index="' + i + '">';
+            rhtml += '<div class="outreach-email-header">';
+            rhtml += '<span class="outreach-email-recipient">' + e(em.to) + ' &mdash; ' + e(em.title) + '</span>';
+            rhtml += '<span class="outreach-email-type">' + e(em.type) + '</span>';
+            rhtml += '</div>';
+            rhtml += '<input type="text" class="outreach-subject" data-email-index="' + i + '" value="' + e(em.subject) + '">';
+            rhtml += '<textarea class="outreach-body" data-email-index="' + i + '" rows="6">' + e(bodyText) + '</textarea>';
+            rhtml += '<div class="outreach-email-actions">';
+            rhtml += '<button class="btn btn-sm btn-secondary outreach-copy-btn" data-email-index="' + i + '">Copy</button>';
+            rhtml += '</div>';
+            rhtml += '</div>';
+          });
+
+          resultsDiv.innerHTML = rhtml;
+          resultsDiv.style.display = 'block';
+
+          // Wire copy buttons
+          resultsDiv.querySelectorAll('.outreach-copy-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+              var idx = parseInt(btn.dataset.emailIndex, 10);
+              var subjectEl = resultsDiv.querySelector('.outreach-subject[data-email-index="' + idx + '"]');
+              var bodyEl = resultsDiv.querySelector('.outreach-body[data-email-index="' + idx + '"]');
+              var text = 'Subject: ' + (subjectEl ? subjectEl.value : '') + '\n\n' + (bodyEl ? bodyEl.value : '');
+              AP.copyToClipboard(text);
+            });
+          });
+
+          // Wire Copy All
+          var copyAllBtn = document.getElementById('btn-copy-all-emails');
+          if (copyAllBtn) {
+            copyAllBtn.addEventListener('click', function() {
+              var allText = '';
+              emails.forEach(function(em, i) {
+                var subjectEl = resultsDiv.querySelector('.outreach-subject[data-email-index="' + i + '"]');
+                var bodyEl = resultsDiv.querySelector('.outreach-body[data-email-index="' + i + '"]');
+                allText += '---\nTo: ' + em.to + ' (' + em.title + ')\nSubject: ' + (subjectEl ? subjectEl.value : em.subject) + '\n\n' + (bodyEl ? bodyEl.value : em.body) + '\n---\n\n';
+              });
+              AP.copyToClipboard(allText.trim());
+            });
+          }
+
+          generateEmailsBtn.disabled = false;
+          generateEmailsBtn.textContent = 'Generate Emails';
+        }).catch(function(err) {
+          console.error('[Outreach] Generation failed:', err);
+          AP.showToast('Email generation failed: ' + err.message, 'error');
+          generateEmailsBtn.disabled = false;
+          generateEmailsBtn.textContent = 'Generate Emails';
+        });
+      });
+    }
   }
 
   return { render: render };
