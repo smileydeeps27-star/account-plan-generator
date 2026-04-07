@@ -128,23 +128,24 @@ body {
 }
 
 .settings-btn {
-  width: 34px; height: 34px;
-  border: 1px solid var(--border);
+  width: 40px; height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--transition);
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .settings-btn:hover {
-  border-color: var(--border-hover);
+  border-color: var(--accent-primary);
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(99, 102, 241, 0.08);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.1);
 }
 
 /* ===== Screen System ===== */
