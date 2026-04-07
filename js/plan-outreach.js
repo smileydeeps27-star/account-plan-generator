@@ -123,10 +123,11 @@ AP.PlanOutreach = (function() {
         'IMPORTANT CONTENT RULES:\n' +
         '- For "Event Invite" emails: Reference a specific upcoming event with its date, location, and registration URL\n' +
         '- For "Insight Share" emails: Reference a specific whitepaper or blog with its URL\n' +
-        '- For "Cold Intro" emails: Mention Gartner Leader status and a relevant customer story\n' +
-        '- For "Executive Briefing Request" emails: Reference relevant analyst recognition and propose a specific topic\n' +
-        '- For "Follow-up" emails: Attach a relevant whitepaper or blog link as a value-add\n' +
-        '- ALWAYS include the actual URL when referencing content\n' +
+        '- For "Cold Intro" emails: Mention Gartner Leader status and include a relevant customer story URL\n' +
+        '- For "Executive Briefing Request" emails: Reference relevant analyst recognition with URL and propose a specific topic\n' +
+        '- For "Follow-up" emails: Include a relevant whitepaper or blog link as a value-add\n' +
+        '- EVERY email type MUST include at least one relevant Aera URL from the content above\n' +
+        '- Put each URL on its OWN line in the email body so it is clearly visible and clickable\n' +
         '- Pick the MOST RELEVANT content for each stakeholder\'s role and industry\n';
     }
 

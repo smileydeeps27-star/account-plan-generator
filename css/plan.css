@@ -38,6 +38,21 @@
   flex-wrap: wrap;
 }
 
+/* ===== Outreach Button ===== */
+.btn-outreach {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  color: white !important;
+  border: none !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px;
+}
+
+.btn-outreach:hover {
+  background: linear-gradient(135deg, #5558e6, #7c4feb) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
 /* ===== Tabs ===== */
 .plan-tabs-wrapper {
   position: relative;
@@ -909,6 +924,44 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+}
+
+.outreach-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.outreach-toggle-edit {
+  color: var(--accent-primary);
+  cursor: pointer;
+  text-transform: none;
+  font-weight: 400;
+}
+
+.outreach-toggle-edit:hover {
+  text-decoration: underline;
+}
+
+.outreach-body-preview {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.outreach-link {
+  color: #818cf8;
+  text-decoration: underline;
+  word-break: break-all;
 }
 
 @media (max-width: 768px) {

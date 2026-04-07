@@ -25,6 +25,7 @@ AP.PlanRenderer = (function() {
     html += '<div class="plan-header-actions">';
     html += '<button class="btn btn-sm btn-secondary" id="btn-new-plan">&#8592; Generate New Plan</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-save-plan">Save</button>';
+    html += '<button class="btn btn-sm btn-outreach" id="btn-go-outreach">&#9993; Outreach Emails</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-copy-md">Copy Markdown</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-export-docx">Export Word</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-export-json">Export JSON</button>';
@@ -44,8 +45,7 @@ AP.PlanRenderer = (function() {
       { id: 'plan', label: '30-60-90' },
       { id: 'risks', label: 'Risks' },
       { id: 'actions', label: 'Actions' },
-      { id: 'meetingnotes', label: 'Notes' },
-      { id: 'outreach', label: 'Outreach' }
+      { id: 'meetingnotes', label: 'Notes' }
     ];
 
     html += '<div class="plan-tabs-wrapper">';
@@ -781,6 +781,17 @@ AP.PlanRenderer = (function() {
     var newBtn = document.getElementById('btn-new-plan');
     if (newBtn) newBtn.addEventListener('click', function() { AP.navigateTo('home'); });
 
+    // Outreach button — switch to outreach panel
+    var outreachBtn = document.getElementById('btn-go-outreach');
+    if (outreachBtn) {
+      outreachBtn.addEventListener('click', function() {
+        document.querySelectorAll('.plan-tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelectorAll('.plan-panel').forEach(function(p) { p.classList.remove('active'); });
+        var panel = document.getElementById('panel-outreach');
+        if (panel) panel.classList.add('active');
+      });
+    }
+
     // Meeting Notes — save
     var saveNoteBtn = document.getElementById('btn-save-note');
     if (saveNoteBtn) {
@@ -975,13 +986,18 @@ AP.PlanRenderer = (function() {
 
           emails.forEach(function(em, i) {
             var bodyText = (em.body || '').replace(/\\n/g, '\n');
+            // Create a preview with clickable links
+            var previewHtml = e(bodyText).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" class="outreach-link">$1</a>').replace(/\n/g, '<br>');
             rhtml += '<div class="outreach-email-card" data-email-index="' + i + '">';
             rhtml += '<div class="outreach-email-header">';
             rhtml += '<span class="outreach-email-recipient">' + e(em.to) + ' &mdash; ' + e(em.title) + '</span>';
             rhtml += '<span class="outreach-email-type">' + e(em.type) + '</span>';
             rhtml += '</div>';
+            rhtml += '<label class="outreach-field-label">Subject</label>';
             rhtml += '<input type="text" class="outreach-subject" data-email-index="' + i + '" value="' + e(em.subject) + '">';
-            rhtml += '<textarea class="outreach-body" data-email-index="' + i + '" rows="6">' + e(bodyText) + '</textarea>';
+            rhtml += '<label class="outreach-field-label">Body <span class="outreach-toggle-edit" data-email-index="' + i + '">(click to edit)</span></label>';
+            rhtml += '<div class="outreach-body-preview" data-email-index="' + i + '">' + previewHtml + '</div>';
+            rhtml += '<textarea class="outreach-body" data-email-index="' + i + '" rows="8" style="display:none">' + e(bodyText) + '</textarea>';
             rhtml += '<div class="outreach-email-actions">';
             rhtml += '<button class="btn btn-sm btn-secondary outreach-copy-btn" data-email-index="' + i + '">Copy</button>';
             rhtml += '</div>';
@@ -990,6 +1006,29 @@ AP.PlanRenderer = (function() {
 
           resultsDiv.innerHTML = rhtml;
           resultsDiv.style.display = 'block';
+
+          // Wire preview/edit toggle
+          resultsDiv.querySelectorAll('.outreach-toggle-edit').forEach(function(toggle) {
+            toggle.addEventListener('click', function() {
+              var idx = toggle.dataset.emailIndex;
+              var preview = resultsDiv.querySelector('.outreach-body-preview[data-email-index="' + idx + '"]');
+              var textarea = resultsDiv.querySelector('.outreach-body[data-email-index="' + idx + '"]');
+              if (preview && textarea) {
+                if (textarea.style.display === 'none') {
+                  textarea.style.display = '';
+                  preview.style.display = 'none';
+                  toggle.textContent = '(click to preview)';
+                } else {
+                  // Update preview from textarea
+                  var updated = e(textarea.value).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" class="outreach-link">$1</a>').replace(/\n/g, '<br>');
+                  preview.innerHTML = updated;
+                  textarea.style.display = 'none';
+                  preview.style.display = '';
+                  toggle.textContent = '(click to edit)';
+                }
+              }
+            });
+          });
 
           // Wire copy buttons
           resultsDiv.querySelectorAll('.outreach-copy-btn').forEach(function(btn) {
