@@ -116,6 +116,20 @@
 
 .form-select { cursor: pointer; appearance: none; }
 
+/* Dark mode date inputs — visible calendar picker */
+input[type="date"] {
+  color-scheme: dark;
+  cursor: pointer;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  opacity: 0.7;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
 .form-textarea {
   resize: vertical;
   min-height: 80px;
