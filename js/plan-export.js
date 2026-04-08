@@ -1,5 +1,6 @@
 /* ===== Account Plan Generator — Export (Markdown + Word) ===== */
-/* Format: Concise, scannable, designed for a sales leader review */
+/* Format: Concise, scannable, Aera-branded, max 4-5 pages */
+/* Font: Calibri | Colors: Aera blue shades (#0693E3, #055A8C, #E8F4FD) */
 
 AP.PlanExport = (function() {
 
@@ -14,7 +15,7 @@ AP.PlanExport = (function() {
   // ===================================================================
   function toMarkdown(plan) {
     var sp = AP.SellerProfile.get() || {};
-    var sellerName = sp.companyName || 'Our Company';
+    var sellerName = sp.companyName || 'Aera Technology';
     var o = plan.overview || {};
     var strat = plan.accountStrategy || {};
     var val = plan.valueHypothesis || {};
@@ -46,17 +47,12 @@ AP.PlanExport = (function() {
     if (strat.positioning || val.executivePitch) {
       L.push('## Why ' + plan.companyName);
       L.push('');
+      if (val.executivePitch) L.push('> ' + val.executivePitch);
+      L.push('');
       if (strat.positioning) L.push(strat.positioning);
       L.push('');
       if (strat.whyNow) L.push('**Why Now:** ' + strat.whyNow);
-      L.push('');
       if (strat.landingZone) L.push('**Entry Point:** ' + strat.landingZone);
-      L.push('');
-    }
-
-    // ---- EXECUTIVE PITCH ----
-    if (val.executivePitch) {
-      L.push('> **Elevator Pitch:** ' + val.executivePitch);
       L.push('');
     }
 
@@ -67,20 +63,7 @@ AP.PlanExport = (function() {
       L.push('');
     }
 
-    // ---- TECH STACK (compact) ----
-    var t = plan.technologyLandscape || {};
-    if (t.knownSystems && t.knownSystems.length) {
-      L.push('## Known Tech Stack');
-      L.push('');
-      L.push('| System | Vendor | Confidence |');
-      L.push('|--------|--------|-----------|');
-      t.knownSystems.forEach(function(s) {
-        L.push('| ' + (s.category || '') + ' | **' + (s.vendor || '') + '** ' + (s.product || '') + ' | ' + (s.confidence || '') + ' |');
-      });
-      L.push('');
-    }
-
-    // ---- STAKEHOLDERS (table, not paragraphs) ----
+    // ---- STAKEHOLDERS ----
     if (plan.stakeholders && plan.stakeholders.length) {
       L.push('## Key Stakeholders');
       L.push('');
@@ -92,19 +75,19 @@ AP.PlanExport = (function() {
       L.push('');
     }
 
-    // ---- COMPETITIVE (table) ----
+    // ---- COMPETITIVE ----
     if (comp.landscape && comp.landscape.length) {
       L.push('## Competitive Landscape');
       L.push('');
-      L.push('| Competitor | Status | Our Advantage | Talk Track |');
-      L.push('|-----------|--------|---------------|-----------|');
+      L.push('| Competitor | Status | Our Advantage |');
+      L.push('|-----------|--------|---------------|');
       comp.landscape.forEach(function(c) {
-        L.push('| **' + (c.competitor || '') + '** | ' + (c.presence || '') + ' | ' + trunc(c.sellerAdvantage || c.aeraAdvantage || '', 80) + ' | ' + trunc(c.battleCard || '', 80) + ' |');
+        L.push('| **' + (c.competitor || '') + '** | ' + (c.presence || '') + ' | ' + trunc(c.sellerAdvantage || c.aeraAdvantage || '', 100) + ' |');
       });
       L.push('');
     }
 
-    // ---- VALUE METRICS (compact) ----
+    // ---- VALUE METRICS ----
     if (val.metrics && val.metrics.length) {
       L.push('## Value Potential');
       L.push('');
@@ -116,47 +99,18 @@ AP.PlanExport = (function() {
       L.push('');
     }
 
-    // ---- 30-60-90 (condensed — goals only, not every action) ----
-    L.push('## 30-60-90 Day Plan');
+    // ---- ACTION PLAN (consolidated, max 10) ----
+    L.push('## Action Plan');
     L.push('');
-    [{ key: 'day30', label: 'Day 1-30' }, { key: 'day60', label: 'Day 31-60' }, { key: 'day90', label: 'Day 61-90' }].forEach(function(phase) {
-      var data = dp[phase.key];
-      if (!data) return;
-      L.push('**' + phase.label + ': ' + (data.title || '') + '**');
-      if (data.whatGoodLooksLike) L.push('Success = ' + data.whatGoodLooksLike);
-      if (data.actions && data.actions.length) {
-        data.actions.slice(0, 3).forEach(function(a) {
-          L.push('- ' + (a.action || '') + ' → _' + (a.owner || '') + '_');
-        });
-      }
-      L.push('');
+    var actionItems = buildActionPlan(plan);
+    L.push('| # | Action | Owner | Timeline | Phase |');
+    L.push('|---|--------|-------|----------|-------|');
+    actionItems.forEach(function(a, i) {
+      L.push('| ' + (i + 1) + ' | ' + a.action + ' | ' + a.owner + ' | ' + a.timeline + ' | ' + a.phase + ' |');
     });
+    L.push('');
 
-    // ---- NEXT 5 STEPS ----
-    if (plan.nextFiveSteps && plan.nextFiveSteps.length) {
-      L.push('## Immediate Next Steps');
-      L.push('');
-      plan.nextFiveSteps.forEach(function(s, i) {
-        L.push((i + 1) + '. **' + (s.action || '') + '** → ' + (s.owner || '') + ' by ' + (s.by || 'TBD'));
-      });
-      L.push('');
-    }
-
-    // ---- ACTION TRACKER (if populated) ----
-    if (plan.actionTracker && plan.actionTracker.length) {
-      var atDone = plan.actionTracker.filter(function(a) { return a.status === 'Done'; }).length;
-      L.push('## Action Tracker (' + atDone + '/' + plan.actionTracker.length + ' done)');
-      L.push('');
-      L.push('| Status | Action | Owner | Due |');
-      L.push('|--------|--------|-------|-----|');
-      plan.actionTracker.forEach(function(a) {
-        var mark = a.status === 'Done' ? '✅' : a.status === 'In Progress' ? '🔄' : '⬜';
-        L.push('| ' + mark + ' ' + (a.status || '') + ' | ' + trunc(a.action || '', 60) + ' | ' + (a.owner || '') + ' | ' + (a.dueDate || '') + ' |');
-      });
-      L.push('');
-    }
-
-    // ---- TOP RISKS (table, not paragraphs) ----
+    // ---- RISKS ----
     if (plan.risks && plan.risks.length) {
       L.push('## Key Risks');
       L.push('');
@@ -168,7 +122,7 @@ AP.PlanExport = (function() {
       L.push('');
     }
 
-    // ---- RECENT NEWS (bullets only) ----
+    // ---- RECENT NEWS ----
     if (plan.news && plan.news.length) {
       L.push('## Recent News');
       L.push('');
@@ -184,13 +138,59 @@ AP.PlanExport = (function() {
     return L.join('\n');
   }
 
+  // ===================================================================
+  // Build consolidated Action Plan — max 10 items from 30-60-90 + next steps
+  // ===================================================================
+  function buildActionPlan(plan) {
+    var items = [];
+    var dp = plan.dayPlan || {};
+
+    // Pull top actions from each 30-60-90 phase
+    [{ key: 'day30', phase: 'Day 1-30' }, { key: 'day60', phase: 'Day 31-60' }, { key: 'day90', phase: 'Day 61-90' }].forEach(function(p) {
+      var data = dp[p.key];
+      if (!data || !data.actions) return;
+      data.actions.slice(0, 4).forEach(function(a) {
+        items.push({
+          action: trunc(a.action || '', 80),
+          owner: a.owner || 'CP',
+          timeline: a.deliverable ? trunc(a.deliverable, 40) : p.phase,
+          phase: p.phase,
+          source: '30-60-90'
+        });
+      });
+    });
+
+    // Add next steps if not already covered
+    if (plan.nextFiveSteps && plan.nextFiveSteps.length) {
+      plan.nextFiveSteps.forEach(function(s) {
+        var isDuplicate = items.some(function(existing) {
+          return existing.action.toLowerCase().indexOf(s.action.toLowerCase().substring(0, 20)) >= 0;
+        });
+        if (!isDuplicate) {
+          items.push({
+            action: trunc(s.action || '', 80),
+            owner: s.owner || 'CP',
+            timeline: s.by || 'TBD',
+            phase: 'Immediate',
+            source: 'next-steps'
+          });
+        }
+      });
+    }
+
+    // Cap at 10 items, prioritize: Immediate first, then Day 1-30, etc.
+    var phaseOrder = { 'Immediate': 0, 'Day 1-30': 1, 'Day 31-60': 2, 'Day 61-90': 3 };
+    items.sort(function(a, b) { return (phaseOrder[a.phase] || 9) - (phaseOrder[b.phase] || 9); });
+    return items.slice(0, 10);
+  }
+
   function toClipboard(plan) {
     var md = toMarkdown(plan);
     AP.copyToClipboard(md);
   }
 
   // ===================================================================
-  // WORD EXPORT — concise, executive-ready format
+  // WORD EXPORT — Aera-branded, Calibri, executive-ready
   // ===================================================================
   var docxLoaded = false;
 
@@ -210,256 +210,287 @@ AP.PlanExport = (function() {
 
     var D = window.docx;
     var sp = AP.SellerProfile.get() || {};
-    var sellerName = sp.companyName || 'Our Company';
+    var sellerName = sp.companyName || 'Aera Technology';
     var o = plan.overview || {};
     var strat = plan.accountStrategy || {};
     var val = plan.valueHypothesis || {};
     var comp = plan.competitive || {};
-    var dp = plan.dayPlan || {};
     var children = [];
 
-    // Page constants
-    var PAGE_W = 9360;
-    var ACCENT = '2E5090';
-    var LIGHT_BG = 'EDF2F7';
-    var cellBorder = { style: D.BorderStyle.SINGLE, size: 1, color: 'D1D5DB' };
+    // ============== AERA BRAND CONSTANTS ==============
+    var FONT = 'Calibri';
+    var PAGE_W = 9360;                      // US Letter usable width in DXA
+    var AERA_BLUE = '0693E3';               // Primary brand blue
+    var AERA_DARK = '055A8C';               // Dark blue for headings
+    var AERA_LIGHT = 'E8F4FD';              // Light blue tint for rows
+    var AERA_ACCENT = '00D084';             // Green accent (sparingly)
+    var TEXT_DARK = '1A1A2E';               // Near-black for body text
+    var TEXT_SECONDARY = '4A5568';           // Secondary text
+    var TEXT_MUTED = '9CA3AF';              // Muted/meta text
+    var BORDER_CLR = 'CBD5E1';              // Subtle table borders
+    var WHITE = 'FFFFFF';
+
+    var cellBorder = { style: D.BorderStyle.SINGLE, size: 1, color: BORDER_CLR };
     var cellBorders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
-    var cellPad = { top: 50, bottom: 50, left: 100, right: 100 };
+    var noBorders = { top: { style: D.BorderStyle.NONE }, bottom: { style: D.BorderStyle.NONE }, left: { style: D.BorderStyle.NONE }, right: { style: D.BorderStyle.NONE } };
+    var cellPad = { top: 60, bottom: 60, left: 120, right: 120 };
     var shadingType = D.ShadingType ? D.ShadingType.CLEAR : 'clear';
 
-    // Helpers
-    function h1(text) {
+    // ============== HELPER FUNCTIONS ==============
+    function sectionHead(text) {
       children.push(new D.Paragraph({
-        children: [new D.TextRun({ text: text, bold: true, size: 28, font: 'Arial', color: ACCENT })],
-        heading: D.HeadingLevel.HEADING_1,
-        spacing: { before: 300, after: 120 },
-        border: { bottom: { style: D.BorderStyle.SINGLE, size: 4, color: ACCENT, space: 4 } }
+        children: [new D.TextRun({ text: text.toUpperCase(), bold: true, size: 22, font: FONT, color: AERA_DARK })],
+        spacing: { before: 360, after: 100 },
+        border: { bottom: { style: D.BorderStyle.SINGLE, size: 3, color: AERA_BLUE, space: 6 } }
       }));
     }
-    function h2(text) {
+
+    function subHead(text) {
       children.push(new D.Paragraph({
-        children: [new D.TextRun({ text: text, bold: true, size: 24, font: 'Arial', color: '374151' })],
-        heading: D.HeadingLevel.HEADING_2,
-        spacing: { before: 200, after: 80 }
+        children: [new D.TextRun({ text: text, bold: true, size: 20, font: FONT, color: AERA_DARK })],
+        spacing: { before: 180, after: 60 }
       }));
     }
-    function p(text, opts) {
+
+    function bodyText(text, opts) {
       if (!text) return;
       opts = opts || {};
       children.push(new D.Paragraph({
-        children: [new D.TextRun({ text: text, size: opts.size || 20, font: 'Arial', color: opts.color || '4B5563', bold: opts.bold || false, italics: opts.italics || false })],
-        spacing: { after: opts.after || 80 }
+        children: [new D.TextRun({ text: text, size: opts.size || 20, font: FONT, color: opts.color || TEXT_SECONDARY, bold: opts.bold || false, italics: opts.italics || false })],
+        spacing: { after: opts.after || 60 },
+        indent: opts.indent ? { left: opts.indent } : undefined
       }));
     }
-    function richP(runs) {
-      children.push(new D.Paragraph({ children: runs, spacing: { after: 80 } }));
-    }
-    function boldLabel(label, value) {
+
+    function labelValue(label, value) {
       if (!value) return;
-      richP([
-        new D.TextRun({ text: label, bold: true, size: 20, font: 'Arial', color: '374151' }),
-        new D.TextRun({ text: value, size: 20, font: 'Arial', color: '4B5563' })
-      ]);
+      children.push(new D.Paragraph({
+        children: [
+          new D.TextRun({ text: label, bold: true, size: 20, font: FONT, color: TEXT_DARK }),
+          new D.TextRun({ text: value, size: 20, font: FONT, color: TEXT_SECONDARY })
+        ],
+        spacing: { after: 50 }
+      }));
     }
 
-    function makeTable(headers, rows, colWidthsArr) {
+    function makeTable(headers, rows, colWidthsArr, opts) {
+      opts = opts || {};
       var colWidths = colWidthsArr || headers.map(function() { return Math.floor(PAGE_W / headers.length); });
-      // Fix last column to absorb rounding
+      // Fix rounding on last column
       var sum = 0;
       for (var ci = 0; ci < colWidths.length - 1; ci++) sum += colWidths[ci];
       colWidths[colWidths.length - 1] = PAGE_W - sum;
 
+      var headerBg = opts.headerColor || AERA_BLUE;
+      var altRowBg = opts.altRowColor || AERA_LIGHT;
+
       var tRows = [];
+      // Header row
       tRows.push(new D.TableRow({ children: headers.map(function(h, i) {
         return new D.TableCell({
           borders: cellBorders, width: { size: colWidths[i], type: D.WidthType.DXA },
-          shading: { fill: ACCENT, type: shadingType }, margins: cellPad,
-          children: [new D.Paragraph({ children: [new D.TextRun({ text: h, bold: true, size: 17, font: 'Arial', color: 'FFFFFF' })] })]
+          shading: { fill: headerBg, type: shadingType }, margins: cellPad,
+          children: [new D.Paragraph({ children: [new D.TextRun({ text: h, bold: true, size: 18, font: FONT, color: WHITE })] })]
         });
       }) }));
+      // Data rows
       rows.forEach(function(row, ri) {
         tRows.push(new D.TableRow({ children: row.map(function(cell, i) {
           return new D.TableCell({
             borders: cellBorders, width: { size: colWidths[i], type: D.WidthType.DXA },
-            shading: ri % 2 === 1 ? { fill: LIGHT_BG, type: shadingType } : undefined,
+            shading: ri % 2 === 1 ? { fill: altRowBg, type: shadingType } : undefined,
             margins: cellPad,
-            children: [new D.Paragraph({ children: [new D.TextRun({ text: String(cell || ''), size: 18, font: 'Arial', color: '374151' })] })]
+            children: [new D.Paragraph({ children: [new D.TextRun({ text: String(cell || ''), size: 18, font: FONT, color: TEXT_DARK })] })]
           });
         }) }));
       });
+
       children.push(new D.Table({ rows: tRows, width: { size: PAGE_W, type: D.WidthType.DXA }, columnWidths: colWidths }));
     }
 
-    // ============== TITLE ==============
+    // Key-value snapshot table (borderless, clean)
+    function makeSnapshotTable(kvPairs) {
+      var tRows = [];
+      kvPairs.forEach(function(kv, ri) {
+        tRows.push(new D.TableRow({ children: [
+          new D.TableCell({
+            borders: noBorders, width: { size: 2600, type: D.WidthType.DXA },
+            margins: { top: 40, bottom: 40, left: 0, right: 100 },
+            children: [new D.Paragraph({ children: [new D.TextRun({ text: kv[0], bold: true, size: 20, font: FONT, color: AERA_DARK })] })]
+          }),
+          new D.TableCell({
+            borders: noBorders, width: { size: 6760, type: D.WidthType.DXA },
+            margins: { top: 40, bottom: 40, left: 100, right: 0 },
+            shading: ri % 2 === 0 ? { fill: AERA_LIGHT, type: shadingType } : undefined,
+            children: [new D.Paragraph({ children: [new D.TextRun({ text: kv[1], size: 20, font: FONT, color: TEXT_DARK })] })]
+          })
+        ] }));
+      });
+      children.push(new D.Table({ rows: tRows, width: { size: PAGE_W, type: D.WidthType.DXA }, columnWidths: [2600, 6760] }));
+    }
+
+    // ============== TITLE BLOCK ==============
+    // Blue accent bar
     children.push(new D.Paragraph({
-      children: [new D.TextRun({ text: plan.companyName, bold: true, size: 44, font: 'Arial', color: ACCENT })],
-      spacing: { after: 60 }
-    }));
-    children.push(new D.Paragraph({
-      children: [new D.TextRun({ text: 'Account Plan', size: 28, font: 'Arial', color: '6B7280' })],
-      spacing: { after: 120 }
-    }));
-    var metaLine = sellerName + '  |  ' + AP.formatDate(plan.generatedAt);
-    if (plan.userInputs && plan.userInputs.dealStage) metaLine += '  |  Stage: ' + plan.userInputs.dealStage;
-    children.push(new D.Paragraph({
-      children: [new D.TextRun({ text: metaLine, size: 18, font: 'Arial', color: '9CA3AF' })],
-      spacing: { after: 200 },
-      border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: ACCENT, space: 8 } }
+      children: [new D.TextRun({ text: '', size: 4 })],
+      spacing: { after: 0 },
+      border: { bottom: { style: D.BorderStyle.SINGLE, size: 18, color: AERA_BLUE, space: 0 } }
     }));
 
-    // ============== ACCOUNT SNAPSHOT ==============
-    h1('Account Snapshot');
-    var snapRows = [];
-    if (o.industry) snapRows.push(['Industry', o.industry]);
-    if (o.hqLocation) snapRows.push(['HQ', o.hqLocation]);
-    if (o.annualRevenue) snapRows.push(['Revenue', o.annualRevenue]);
-    if (o.employeeCount) snapRows.push(['Employees', o.employeeCount]);
-    if (snapRows.length) makeTable(['', ''], snapRows, [2400, 6960]);
+    // Company name
+    children.push(new D.Paragraph({
+      children: [new D.TextRun({ text: plan.companyName, bold: true, size: 48, font: FONT, color: AERA_DARK })],
+      spacing: { before: 200, after: 40 }
+    }));
 
+    // Subtitle
+    children.push(new D.Paragraph({
+      children: [new D.TextRun({ text: 'ACCOUNT PLAN', size: 26, font: FONT, color: AERA_BLUE, characterSpacing: 200 })],
+      spacing: { after: 100 }
+    }));
+
+    // Meta line
+    var metaParts = [sellerName, AP.formatDate(plan.generatedAt)];
+    if (plan.userInputs && plan.userInputs.dealStage) metaParts.push('Stage: ' + plan.userInputs.dealStage);
+    children.push(new D.Paragraph({
+      children: [new D.TextRun({ text: metaParts.join('  |  '), size: 18, font: FONT, color: TEXT_MUTED })],
+      spacing: { after: 300 }
+    }));
+
+    // ============== 1. ACCOUNT SNAPSHOT ==============
+    sectionHead('Account Snapshot');
+    var snapPairs = [];
+    if (o.industry) snapPairs.push(['Industry', o.industry]);
+    if (o.hqLocation) snapPairs.push(['Headquarters', o.hqLocation]);
+    if (o.annualRevenue) snapPairs.push(['Annual Revenue', o.annualRevenue]);
+    if (o.employeeCount) snapPairs.push(['Employees', o.employeeCount]);
     if (o.strategicPriorities && o.strategicPriorities.length) {
-      p('Strategic Priorities: ' + o.strategicPriorities.slice(0, 4).join(' • '), { bold: true, after: 120 });
+      snapPairs.push(['Strategic Priorities', o.strategicPriorities.slice(0, 4).join('  •  ')]);
+    }
+    if (snapPairs.length) makeSnapshotTable(snapPairs);
+
+    // ============== 2. WHY THIS ACCOUNT ==============
+    if (strat.positioning || val.executivePitch || strat.whyNow) {
+      sectionHead('Why ' + plan.companyName);
+
+      // Executive pitch as highlighted callout
+      if (val.executivePitch) {
+        children.push(new D.Paragraph({
+          children: [new D.TextRun({ text: '"' + val.executivePitch + '"', size: 21, font: FONT, color: AERA_DARK, italics: true })],
+          spacing: { before: 80, after: 120 },
+          indent: { left: 300, right: 300 },
+          border: { left: { style: D.BorderStyle.SINGLE, size: 12, color: AERA_BLUE, space: 8 } }
+        }));
+      }
+
+      if (strat.positioning) labelValue('Positioning: ', strat.positioning);
+      if (strat.whyNow) labelValue('Why Now: ', strat.whyNow);
+      if (strat.landingZone) labelValue('Entry Point: ', strat.landingZone);
+
+      if (strat.keyMessages && strat.keyMessages.length) {
+        subHead('Key Messages');
+        strat.keyMessages.slice(0, 3).forEach(function(m, i) {
+          bodyText((i + 1) + '.  ' + m);
+        });
+      }
     }
 
-    // ============== STRATEGY ON A PAGE ==============
-    h1('Strategy');
-    if (strat.positioning) boldLabel('Positioning: ', strat.positioning);
-    if (strat.whyAera) boldLabel('Why Aera: ', strat.whyAera);
-    if (strat.whyNow) boldLabel('Why Now: ', strat.whyNow);
-    if (strat.landingZone) boldLabel('Entry Point: ', strat.landingZone);
-    if (strat.keyMessages && strat.keyMessages.length) {
-      h2('Key Messages');
-      strat.keyMessages.forEach(function(m, i) { p((i + 1) + '. ' + m); });
-    }
-
-    // ============== EXECUTIVE PITCH (callout) ==============
-    if (val.executivePitch) {
-      children.push(new D.Paragraph({
-        children: [new D.TextRun({ text: '"' + val.executivePitch + '"', size: 20, font: 'Arial', color: ACCENT, italics: true })],
-        spacing: { before: 120, after: 120 },
-        indent: { left: 400, right: 400 }
-      }));
-    }
-
-    // ============== STAKEHOLDERS ==============
+    // ============== 3. KEY STAKEHOLDERS ==============
     if (plan.stakeholders && plan.stakeholders.length) {
-      h1('Key Stakeholders');
+      sectionHead('Key Stakeholders');
       makeTable(
         ['Name', 'Title', 'Role', 'Engagement Approach'],
-        plan.stakeholders.map(function(s) {
-          return [s.name || '', s.title || '', s.roleInDeal || '', trunc(s.engagementStrategy || s.notes || '', 120)];
+        plan.stakeholders.slice(0, 8).map(function(s) {
+          return [s.name || '', s.title || '', s.roleInDeal || '', trunc(s.engagementStrategy || s.notes || '', 100)];
         }),
-        [1800, 2200, 1400, 3960]
+        [1800, 2400, 1200, 3960]
       );
     }
 
-    // ============== COMPETITIVE ==============
+    // ============== 4. COMPETITIVE LANDSCAPE ==============
     if (comp.landscape && comp.landscape.length) {
-      h1('Competitive Landscape');
+      sectionHead('Competitive Landscape');
       makeTable(
-        ['Competitor', 'Status', 'Our Advantage', 'Talk Track'],
-        comp.landscape.map(function(c) {
-          return [c.competitor || '', c.presence || '', trunc(c.sellerAdvantage || c.aeraAdvantage || '', 100), trunc(c.battleCard || '', 80)];
+        ['Competitor', 'Presence', 'Aera Advantage'],
+        comp.landscape.slice(0, 5).map(function(c) {
+          return [c.competitor || '', c.presence || '', trunc(c.sellerAdvantage || c.aeraAdvantage || '', 120)];
         }),
-        [1600, 1200, 3400, 3160]
+        [1800, 1600, 5960]
       );
     }
 
-    // ============== VALUE POTENTIAL ==============
+    // ============== 5. VALUE POTENTIAL ==============
     if (val.metrics && val.metrics.length) {
-      h1('Value Potential');
+      sectionHead('Value Potential');
       makeTable(
-        ['Opportunity', 'Impact', 'Confidence'],
-        val.metrics.map(function(m) { return [m.metric || '', m.impact || '', m.confidence || '']; }),
+        ['Opportunity', 'Projected Impact', 'Confidence'],
+        val.metrics.slice(0, 5).map(function(m) { return [m.metric || '', m.impact || '', m.confidence || '']; }),
         [4000, 3360, 2000]
       );
     }
 
-    // ============== TECH STACK ==============
-    var tech = plan.technologyLandscape || {};
-    if (tech.knownSystems && tech.knownSystems.length) {
-      h1('Known Tech Stack');
+    // ============== 6. ACTION PLAN (consolidated, max 10) ==============
+    sectionHead('Action Plan');
+    var actionItems = buildActionPlan(plan);
+    if (actionItems.length) {
       makeTable(
-        ['Category', 'Vendor / Product', 'Confidence'],
-        tech.knownSystems.map(function(s) {
-          return [s.category || '', (s.vendor || '') + (s.product ? ' — ' + s.product : ''), s.confidence || ''];
+        ['#', 'Action', 'Owner', 'Timeline', 'Phase'],
+        actionItems.map(function(a, i) {
+          return [String(i + 1), a.action, a.owner, a.timeline, a.phase];
         }),
-        [2000, 5360, 2000]
+        [400, 4600, 1200, 1600, 1560],
+        { headerColor: AERA_DARK }
       );
     }
 
-    // ============== 30-60-90 (condensed) ==============
-    h1('30-60-90 Day Plan');
-    [{ key: 'day30', label: 'Day 1-30' }, { key: 'day60', label: 'Day 31-60' }, { key: 'day90', label: 'Day 61-90' }].forEach(function(phase) {
-      var data = dp[phase.key];
-      if (!data) return;
-      h2(phase.label + ': ' + (data.title || ''));
-      if (data.whatGoodLooksLike) p('Success = ' + data.whatGoodLooksLike, { italics: true, color: ACCENT });
-      if (data.actions && data.actions.length) {
-        makeTable(
-          ['Action', 'Owner', 'Deliverable'],
-          data.actions.slice(0, 5).map(function(a) { return [a.action || '', a.owner || '', a.deliverable || '']; }),
-          [5000, 1600, 2760]
-        );
-      }
-    });
-
-    // ============== NEXT STEPS ==============
-    if (plan.nextFiveSteps && plan.nextFiveSteps.length) {
-      h1('Immediate Next Steps');
-      makeTable(
-        ['#', 'Action', 'Owner', 'By'],
-        plan.nextFiveSteps.map(function(s, i) { return [String(s.step || (i + 1)), s.action || '', s.owner || '', s.by || 'TBD']; }),
-        [400, 5560, 1600, 1800]
-      );
-    }
-
-    // ============== ACTION TRACKER ==============
-    if (plan.actionTracker && plan.actionTracker.length) {
-      var atDone = plan.actionTracker.filter(function(a) { return a.status === 'Done'; }).length;
-      h1('Action Tracker (' + atDone + '/' + plan.actionTracker.length + ' complete)');
-      makeTable(
-        ['Status', 'Action', 'Owner', 'Due'],
-        plan.actionTracker.map(function(a) { return [a.status || '', trunc(a.action || '', 60), a.owner || '', a.dueDate || '']; }),
-        [1400, 4560, 1600, 1800]
-      );
-    }
-
-    // ============== RISKS ==============
+    // ============== 7. KEY RISKS ==============
     if (plan.risks && plan.risks.length) {
-      h1('Key Risks');
+      sectionHead('Key Risks');
       makeTable(
         ['Risk', 'L / I', 'Mitigation', 'Owner'],
-        plan.risks.slice(0, 6).map(function(r) {
+        plan.risks.slice(0, 5).map(function(r) {
           return [trunc(r.risk || '', 80), (r.likelihood || '?')[0] + ' / ' + (r.impact || '?')[0], trunc(r.mitigation || '', 100), r.owner || ''];
         }),
-        [2600, 800, 4160, 1800]
+        [2800, 800, 3960, 1800]
       );
     }
 
-    // ============== NEWS (compact) ==============
+    // ============== 8. RECENT NEWS (compact) ==============
     if (plan.news && plan.news.length) {
-      h1('Recent News');
-      plan.news.slice(0, 5).forEach(function(n) {
-        richP([
-          new D.TextRun({ text: (n.headline || ''), bold: true, size: 18, font: 'Arial', color: '374151' }),
-          new D.TextRun({ text: n.date ? '  (' + n.date + ')' : '', size: 18, font: 'Arial', color: '9CA3AF' })
-        ]);
+      sectionHead('Recent News');
+      plan.news.slice(0, 4).forEach(function(n) {
+        children.push(new D.Paragraph({
+          children: [
+            new D.TextRun({ text: '▸  ', size: 18, font: FONT, color: AERA_BLUE }),
+            new D.TextRun({ text: (n.headline || ''), bold: true, size: 18, font: FONT, color: TEXT_DARK }),
+            new D.TextRun({ text: n.date ? '   (' + n.date + ')' : '', size: 18, font: FONT, color: TEXT_MUTED })
+          ],
+          spacing: { after: 40 }
+        }));
       });
     }
 
     // ============== FOOTER ==============
     children.push(new D.Paragraph({
-      children: [new D.TextRun({ text: 'Generated by ' + sellerName + ' Account Plan Generator | ' + AP.formatDate(plan.generatedAt), size: 16, font: 'Arial', color: '9CA3AF', italics: true })],
+      children: [new D.TextRun({ text: '', size: 4 })],
       spacing: { before: 400 },
-      border: { top: { style: D.BorderStyle.SINGLE, size: 2, color: 'D1D5DB', space: 8 } }
+      border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: AERA_BLUE, space: 0 } }
+    }));
+    children.push(new D.Paragraph({
+      children: [
+        new D.TextRun({ text: 'Generated by ', size: 16, font: FONT, color: TEXT_MUTED, italics: true }),
+        new D.TextRun({ text: sellerName + ' Account Plan Generator', size: 16, font: FONT, color: AERA_BLUE, italics: true }),
+        new D.TextRun({ text: '  |  ' + AP.formatDate(plan.generatedAt), size: 16, font: FONT, color: TEXT_MUTED, italics: true })
+      ],
+      spacing: { before: 80 }
     }));
 
-    // ============== BUILD DOC ==============
+    // ============== BUILD DOCUMENT ==============
     var doc = new D.Document({
       sections: [{
         properties: {
           page: {
-            size: { width: 12240, height: 15840 },
+            size: { width: 12240, height: 15840 },           // US Letter
             margin: { top: 1080, right: 1440, bottom: 1080, left: 1440 }
           }
         },
