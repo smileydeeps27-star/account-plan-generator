@@ -188,9 +188,10 @@ AP.PlanExport = (function() {
   }
 
   // ===================================================================
-  // WORD EXPORT — Aera-branded, Calibri, executive-ready
+  // WORD EXPORT — Aera SOW-style: logo header, branded footer, Calibri
   // ===================================================================
   var docxLoaded = false;
+  var AERA_LOGO_B64 = null;
 
   function loadDocxLib() {
     return new Promise(function(resolve, reject) {
@@ -203,8 +204,17 @@ AP.PlanExport = (function() {
     });
   }
 
+  function loadAeraLogo() {
+    if (AERA_LOGO_B64) return Promise.resolve(AERA_LOGO_B64);
+    return fetch('/images/aera-logo.png')
+      .then(function(r) { return r.arrayBuffer(); })
+      .then(function(buf) { AERA_LOGO_B64 = new Uint8Array(buf); return AERA_LOGO_B64; })
+      .catch(function() { AERA_LOGO_B64 = null; return null; });
+  }
+
   async function toDocx(plan) {
     try { await loadDocxLib(); } catch (err) { AP.showToast('Failed to load Word export library', 'error'); return; }
+    var logoData = await loadAeraLogo();
 
     var D = window.docx;
     var sp = AP.SellerProfile.get() || {};
@@ -215,17 +225,18 @@ AP.PlanExport = (function() {
     var comp = plan.competitive || {};
     var children = [];
 
-    // ============== AERA BRAND CONSTANTS ==============
+    // ============== AERA BRAND CONSTANTS (from SOW template) ==============
     var FONT = 'Calibri';
-    var PAGE_W = 9360;                      // US Letter usable width in DXA
-    var AERA_BLUE = '0693E3';               // Primary brand blue
-    var AERA_DARK = '055A8C';               // Dark blue for headings
-    var AERA_LIGHT = 'E8F4FD';              // Light blue tint for rows
-    var AERA_ACCENT = '00D084';             // Green accent (sparingly)
-    var TEXT_DARK = '1A1A2E';               // Near-black for body text
-    var TEXT_SECONDARY = '4A5568';           // Secondary text
-    var TEXT_MUTED = '9CA3AF';              // Muted/meta text
-    var BORDER_CLR = 'CBD5E1';              // Subtle table borders
+    var PAGE_W = 9360;                      // US Letter usable width (1" margins)
+    var H1_COLOR = '1F4E79';               // Dark navy — SOW Heading 1
+    var H2_COLOR = '2E75B6';               // Medium blue — SOW Heading 2
+    var ACCENT = '2E75B6';                 // Header/footer border color
+    var TABLE_HEADER = '2E75B6';           // Table header bg
+    var ALT_ROW = 'D6E4F0';               // Light blue alternating rows
+    var TEXT_DARK = '1A1A2E';              // Near-black body text
+    var TEXT_BODY = '333333';              // Standard body text
+    var TEXT_MUTED = '888888';             // Footer/meta text
+    var BORDER_CLR = 'B4C6E0';            // Table borders
     var WHITE = 'FFFFFF';
 
     var cellBorder = { style: D.BorderStyle.SINGLE, size: 1, color: BORDER_CLR };
@@ -234,19 +245,51 @@ AP.PlanExport = (function() {
     var cellPad = { top: 60, bottom: 60, left: 120, right: 120 };
     var shadingType = D.ShadingType ? D.ShadingType.CLEAR : 'clear';
 
+    // ============== HEADER — Aera logo with blue underline ==============
+    var headerChildren = [];
+    if (logoData) {
+      headerChildren.push(new D.ImageRun({
+        type: 'png',
+        data: logoData,
+        transformation: { width: 76, height: 30 },
+        altText: { title: 'Aera Technology', description: 'Aera Technology Logo', name: 'aera-logo' }
+      }));
+    }
+    var docHeader = new D.Header({
+      children: [new D.Paragraph({
+        children: headerChildren,
+        border: { bottom: { style: D.BorderStyle.SINGLE, size: 4, color: ACCENT, space: 4 } },
+        spacing: { after: 200 }
+      })]
+    });
+
+    // ============== FOOTER — "Aera Technology, Inc. Confidential" + Page # ==============
+    var docFooter = new D.Footer({
+      children: [new D.Paragraph({
+        children: [
+          new D.TextRun({ text: 'Aera Technology, Inc. Confidential', font: FONT, size: 16, color: TEXT_MUTED }),
+          new D.TextRun({ text: '\t', font: FONT, size: 16 }),
+          new D.TextRun({ text: 'Page ', font: FONT, size: 16, color: TEXT_MUTED }),
+          new D.TextRun({ children: [D.PageNumber.CURRENT], font: FONT, size: 16, color: TEXT_MUTED })
+        ],
+        border: { top: { style: D.BorderStyle.SINGLE, size: 4, color: ACCENT, space: 4 } },
+        tabStops: [{ type: D.TabStopType.RIGHT, position: 9360 }]
+      })]
+    });
+
     // ============== HELPER FUNCTIONS ==============
     function sectionHead(text) {
       children.push(new D.Paragraph({
-        children: [new D.TextRun({ text: text.toUpperCase(), bold: true, size: 22, font: FONT, color: AERA_DARK })],
-        spacing: { before: 360, after: 100 },
-        border: { bottom: { style: D.BorderStyle.SINGLE, size: 3, color: AERA_BLUE, space: 6 } }
+        children: [new D.TextRun({ text: text.toUpperCase(), bold: true, size: 26, font: FONT, color: H1_COLOR })],
+        spacing: { before: 400, after: 160 },
+        border: { bottom: { style: D.BorderStyle.SINGLE, size: 4, color: ACCENT, space: 6 } }
       }));
     }
 
     function subHead(text) {
       children.push(new D.Paragraph({
-        children: [new D.TextRun({ text: text, bold: true, size: 20, font: FONT, color: AERA_DARK })],
-        spacing: { before: 180, after: 60 }
+        children: [new D.TextRun({ text: text, bold: true, size: 22, font: FONT, color: H2_COLOR })],
+        spacing: { before: 280, after: 120 }
       }));
     }
 
@@ -254,8 +297,8 @@ AP.PlanExport = (function() {
       if (!text) return;
       opts = opts || {};
       children.push(new D.Paragraph({
-        children: [new D.TextRun({ text: text, size: opts.size || 20, font: FONT, color: opts.color || TEXT_SECONDARY, bold: opts.bold || false, italics: opts.italics || false })],
-        spacing: { after: opts.after || 60 },
+        children: [new D.TextRun({ text: text, size: opts.size || 21, font: FONT, color: opts.color || TEXT_BODY, bold: opts.bold || false, italics: opts.italics || false })],
+        spacing: { after: opts.after || 120, line: 276 },
         indent: opts.indent ? { left: opts.indent } : undefined
       }));
     }
@@ -264,23 +307,22 @@ AP.PlanExport = (function() {
       if (!value) return;
       children.push(new D.Paragraph({
         children: [
-          new D.TextRun({ text: label, bold: true, size: 20, font: FONT, color: TEXT_DARK }),
-          new D.TextRun({ text: value, size: 20, font: FONT, color: TEXT_SECONDARY })
+          new D.TextRun({ text: label, bold: true, size: 21, font: FONT, color: H1_COLOR }),
+          new D.TextRun({ text: value, size: 21, font: FONT, color: TEXT_BODY })
         ],
-        spacing: { after: 50 }
+        spacing: { after: 120, line: 276 }
       }));
     }
 
     function makeTable(headers, rows, colWidthsArr, opts) {
       opts = opts || {};
       var colWidths = colWidthsArr || headers.map(function() { return Math.floor(PAGE_W / headers.length); });
-      // Fix rounding on last column
       var sum = 0;
       for (var ci = 0; ci < colWidths.length - 1; ci++) sum += colWidths[ci];
       colWidths[colWidths.length - 1] = PAGE_W - sum;
 
-      var headerBg = opts.headerColor || AERA_BLUE;
-      var altRowBg = opts.altRowColor || AERA_LIGHT;
+      var headerBg = opts.headerColor || TABLE_HEADER;
+      var altRowBg = opts.altRowColor || ALT_ROW;
 
       var tRows = [];
       // Header row
@@ -302,8 +344,9 @@ AP.PlanExport = (function() {
           });
         }) }));
       });
-
+      // Add spacing after table
       children.push(new D.Table({ rows: tRows, width: { size: PAGE_W, type: D.WidthType.DXA }, columnWidths: colWidths }));
+      children.push(new D.Paragraph({ children: [], spacing: { after: 80 } }));
     }
 
     // Key-value snapshot table (borderless, clean)
@@ -313,46 +356,41 @@ AP.PlanExport = (function() {
         tRows.push(new D.TableRow({ children: [
           new D.TableCell({
             borders: noBorders, width: { size: 2600, type: D.WidthType.DXA },
-            margins: { top: 40, bottom: 40, left: 0, right: 100 },
-            children: [new D.Paragraph({ children: [new D.TextRun({ text: kv[0], bold: true, size: 20, font: FONT, color: AERA_DARK })] })]
+            margins: { top: 50, bottom: 50, left: 0, right: 100 },
+            children: [new D.Paragraph({ children: [new D.TextRun({ text: kv[0], bold: true, size: 21, font: FONT, color: H1_COLOR })] })]
           }),
           new D.TableCell({
             borders: noBorders, width: { size: 6760, type: D.WidthType.DXA },
-            margins: { top: 40, bottom: 40, left: 100, right: 0 },
-            shading: ri % 2 === 0 ? { fill: AERA_LIGHT, type: shadingType } : undefined,
-            children: [new D.Paragraph({ children: [new D.TextRun({ text: kv[1], size: 20, font: FONT, color: TEXT_DARK })] })]
+            margins: { top: 50, bottom: 50, left: 120, right: 0 },
+            shading: ri % 2 === 0 ? { fill: ALT_ROW, type: shadingType } : undefined,
+            children: [new D.Paragraph({ children: [new D.TextRun({ text: kv[1], size: 21, font: FONT, color: TEXT_DARK })] })]
           })
         ] }));
       });
       children.push(new D.Table({ rows: tRows, width: { size: PAGE_W, type: D.WidthType.DXA }, columnWidths: [2600, 6760] }));
+      children.push(new D.Paragraph({ children: [], spacing: { after: 80 } }));
     }
 
     // ============== TITLE BLOCK ==============
-    // Blue accent bar
+    // Company name — large
     children.push(new D.Paragraph({
-      children: [new D.TextRun({ text: '', size: 4 })],
-      spacing: { after: 0 },
-      border: { bottom: { style: D.BorderStyle.SINGLE, size: 18, color: AERA_BLUE, space: 0 } }
-    }));
-
-    // Company name
-    children.push(new D.Paragraph({
-      children: [new D.TextRun({ text: plan.companyName, bold: true, size: 48, font: FONT, color: AERA_DARK })],
-      spacing: { before: 200, after: 40 }
+      children: [new D.TextRun({ text: plan.companyName, bold: true, size: 48, font: FONT, color: H1_COLOR })],
+      spacing: { before: 120, after: 60 }
     }));
 
     // Subtitle
     children.push(new D.Paragraph({
-      children: [new D.TextRun({ text: 'ACCOUNT PLAN', size: 26, font: FONT, color: AERA_BLUE, characterSpacing: 200 })],
-      spacing: { after: 100 }
+      children: [new D.TextRun({ text: 'ACCOUNT PLAN', size: 24, font: FONT, color: H2_COLOR, characterSpacing: 200 })],
+      spacing: { after: 120 }
     }));
 
-    // Meta line
+    // Meta line with bottom border
     var metaParts = [sellerName, AP.formatDate(plan.generatedAt)];
     if (plan.userInputs && plan.userInputs.dealStage) metaParts.push('Stage: ' + plan.userInputs.dealStage);
     children.push(new D.Paragraph({
       children: [new D.TextRun({ text: metaParts.join('  |  '), size: 18, font: FONT, color: TEXT_MUTED })],
-      spacing: { after: 300 }
+      spacing: { after: 360 },
+      border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: ACCENT, space: 8 } }
     }));
 
     // ============== 1. ACCOUNT SNAPSHOT ==============
@@ -363,7 +401,7 @@ AP.PlanExport = (function() {
     if (o.annualRevenue) snapPairs.push(['Annual Revenue', o.annualRevenue]);
     if (o.employeeCount) snapPairs.push(['Employees', o.employeeCount]);
     if (o.strategicPriorities && o.strategicPriorities.length) {
-      snapPairs.push(['Strategic Priorities', o.strategicPriorities.slice(0, 4).join('  •  ')]);
+      snapPairs.push(['Strategic Priorities', o.strategicPriorities.slice(0, 4).join('  \u2022  ')]);
     }
     if (snapPairs.length) makeSnapshotTable(snapPairs);
 
@@ -371,13 +409,13 @@ AP.PlanExport = (function() {
     if (strat.positioning || val.executivePitch || strat.whyNow) {
       sectionHead('Why ' + plan.companyName);
 
-      // Executive pitch as highlighted callout
+      // Executive pitch as highlighted callout with left blue bar
       if (val.executivePitch) {
         children.push(new D.Paragraph({
-          children: [new D.TextRun({ text: '"' + val.executivePitch + '"', size: 21, font: FONT, color: AERA_DARK, italics: true })],
-          spacing: { before: 80, after: 120 },
-          indent: { left: 300, right: 300 },
-          border: { left: { style: D.BorderStyle.SINGLE, size: 12, color: AERA_BLUE, space: 8 } }
+          children: [new D.TextRun({ text: '\u201C' + val.executivePitch + '\u201D', size: 21, font: FONT, color: H1_COLOR, italics: true })],
+          spacing: { before: 120, after: 200, line: 300 },
+          indent: { left: 400, right: 400 },
+          border: { left: { style: D.BorderStyle.SINGLE, size: 14, color: H2_COLOR, space: 10 } }
         }));
       }
 
@@ -399,7 +437,7 @@ AP.PlanExport = (function() {
       makeTable(
         ['Name', 'Title', 'Role', 'Engagement Approach'],
         plan.stakeholders.slice(0, 8).map(function(s) {
-          return [s.name || '', s.title || '', s.roleInDeal || '', trunc(s.engagementStrategy || s.notes || '', 100)];
+          return [s.name || '', s.title || '', s.roleInDeal || '', trunc(s.engagementStrategy || s.notes || '', 120)];
         }),
         [1800, 2400, 1200, 3960]
       );
@@ -411,7 +449,7 @@ AP.PlanExport = (function() {
       makeTable(
         ['Competitor', 'Presence', 'Aera Advantage'],
         comp.landscape.slice(0, 5).map(function(c) {
-          return [c.competitor || '', c.presence || '', trunc(c.sellerAdvantage || c.aeraAdvantage || '', 120)];
+          return [c.competitor || '', c.presence || '', trunc(c.sellerAdvantage || c.aeraAdvantage || '', 140)];
         }),
         [1800, 1600, 5960]
       );
@@ -437,7 +475,7 @@ AP.PlanExport = (function() {
           return [String(i + 1), a.action, a.owner, a.phase];
         }),
         [400, 6160, 1200, 1600],
-        { headerColor: AERA_DARK }
+        { headerColor: H1_COLOR }
       );
     }
 
@@ -447,7 +485,7 @@ AP.PlanExport = (function() {
       makeTable(
         ['Risk', 'L / I', 'Mitigation', 'Owner'],
         plan.risks.slice(0, 5).map(function(r) {
-          return [trunc(r.risk || '', 80), (r.likelihood || '?')[0] + ' / ' + (r.impact || '?')[0], trunc(r.mitigation || '', 100), r.owner || ''];
+          return [trunc(r.risk || '', 100), (r.likelihood || '?')[0] + ' / ' + (r.impact || '?')[0], trunc(r.mitigation || '', 120), r.owner || ''];
         }),
         [2800, 800, 3960, 1800]
       );
@@ -459,39 +497,31 @@ AP.PlanExport = (function() {
       plan.news.slice(0, 4).forEach(function(n) {
         children.push(new D.Paragraph({
           children: [
-            new D.TextRun({ text: '▸  ', size: 18, font: FONT, color: AERA_BLUE }),
+            new D.TextRun({ text: '\u25B8  ', size: 18, font: FONT, color: H2_COLOR }),
             new D.TextRun({ text: (n.headline || ''), bold: true, size: 18, font: FONT, color: TEXT_DARK }),
             new D.TextRun({ text: n.date ? '   (' + n.date + ')' : '', size: 18, font: FONT, color: TEXT_MUTED })
           ],
-          spacing: { after: 40 }
+          spacing: { after: 80 }
         }));
       });
     }
 
-    // ============== FOOTER ==============
-    children.push(new D.Paragraph({
-      children: [new D.TextRun({ text: '', size: 4 })],
-      spacing: { before: 400 },
-      border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: AERA_BLUE, space: 0 } }
-    }));
-    children.push(new D.Paragraph({
-      children: [
-        new D.TextRun({ text: 'Generated by ', size: 16, font: FONT, color: TEXT_MUTED, italics: true }),
-        new D.TextRun({ text: sellerName + ' Account Plan Generator', size: 16, font: FONT, color: AERA_BLUE, italics: true }),
-        new D.TextRun({ text: '  |  ' + AP.formatDate(plan.generatedAt), size: 16, font: FONT, color: TEXT_MUTED, italics: true })
-      ],
-      spacing: { before: 80 }
-    }));
-
     // ============== BUILD DOCUMENT ==============
     var doc = new D.Document({
+      styles: {
+        default: {
+          document: { run: { font: FONT, size: 22 } }
+        }
+      },
       sections: [{
         properties: {
           page: {
             size: { width: 12240, height: 15840 },           // US Letter
-            margin: { top: 1080, right: 1440, bottom: 1080, left: 1440 }
+            margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 }
           }
         },
+        headers: { default: docHeader },
+        footers: { default: docFooter },
         children: children
       }]
     });
