@@ -289,7 +289,7 @@ AP.PlanExport = (function() {
     function subHead(text) {
       children.push(new D.Paragraph({
         children: [new D.TextRun({ text: text, bold: true, size: 22, font: FONT, color: H2_COLOR })],
-        spacing: { before: 280, after: 120 }
+        spacing: { before: 360, after: 160 }
       }));
     }
 
@@ -298,7 +298,7 @@ AP.PlanExport = (function() {
       opts = opts || {};
       children.push(new D.Paragraph({
         children: [new D.TextRun({ text: text, size: opts.size || 21, font: FONT, color: opts.color || TEXT_BODY, bold: opts.bold || false, italics: opts.italics || false })],
-        spacing: { after: opts.after || 120, line: 276 },
+        spacing: { after: opts.after || 160, line: 312 },
         indent: opts.indent ? { left: opts.indent } : undefined
       }));
     }
@@ -310,7 +310,7 @@ AP.PlanExport = (function() {
           new D.TextRun({ text: label, bold: true, size: 21, font: FONT, color: H1_COLOR }),
           new D.TextRun({ text: value, size: 21, font: FONT, color: TEXT_BODY })
         ],
-        spacing: { after: 120, line: 276 }
+        spacing: { before: 60, after: 200, line: 312 }
       }));
     }
 
@@ -413,7 +413,7 @@ AP.PlanExport = (function() {
       if (val.executivePitch) {
         children.push(new D.Paragraph({
           children: [new D.TextRun({ text: '\u201C' + val.executivePitch + '\u201D', size: 21, font: FONT, color: H1_COLOR, italics: true })],
-          spacing: { before: 120, after: 200, line: 300 },
+          spacing: { before: 160, after: 320, line: 312 },
           indent: { left: 400, right: 400 },
           border: { left: { style: D.BorderStyle.SINGLE, size: 14, color: H2_COLOR, space: 10 } }
         }));
