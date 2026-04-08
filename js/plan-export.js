@@ -103,10 +103,10 @@ AP.PlanExport = (function() {
     L.push('## Action Plan');
     L.push('');
     var actionItems = buildActionPlan(plan);
-    L.push('| # | Action | Owner | Timeline | Phase |');
-    L.push('|---|--------|-------|----------|-------|');
+    L.push('| # | Action | Owner | Phase |');
+    L.push('|---|--------|-------|-------|');
     actionItems.forEach(function(a, i) {
-      L.push('| ' + (i + 1) + ' | ' + a.action + ' | ' + a.owner + ' | ' + a.timeline + ' | ' + a.phase + ' |');
+      L.push('| ' + (i + 1) + ' | ' + a.action + ' | ' + a.owner + ' | ' + a.phase + ' |');
     });
     L.push('');
 
@@ -151,9 +151,8 @@ AP.PlanExport = (function() {
       if (!data || !data.actions) return;
       data.actions.slice(0, 4).forEach(function(a) {
         items.push({
-          action: trunc(a.action || '', 80),
+          action: a.action || '',
           owner: a.owner || 'CP',
-          timeline: a.deliverable ? trunc(a.deliverable, 40) : p.phase,
           phase: p.phase,
           source: '30-60-90'
         });
@@ -168,9 +167,8 @@ AP.PlanExport = (function() {
         });
         if (!isDuplicate) {
           items.push({
-            action: trunc(s.action || '', 80),
+            action: s.action || '',
             owner: s.owner || 'CP',
-            timeline: s.by || 'TBD',
             phase: 'Immediate',
             source: 'next-steps'
           });
@@ -434,11 +432,11 @@ AP.PlanExport = (function() {
     var actionItems = buildActionPlan(plan);
     if (actionItems.length) {
       makeTable(
-        ['#', 'Action', 'Owner', 'Timeline', 'Phase'],
+        ['#', 'Action', 'Owner', 'Phase'],
         actionItems.map(function(a, i) {
-          return [String(i + 1), a.action, a.owner, a.timeline, a.phase];
+          return [String(i + 1), a.action, a.owner, a.phase];
         }),
-        [400, 4600, 1200, 1600, 1560],
+        [400, 6160, 1200, 1600],
         { headerColor: AERA_DARK }
       );
     }
