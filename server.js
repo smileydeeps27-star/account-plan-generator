@@ -192,6 +192,52 @@ async function handleGeminiProxy(req, res) {
   }
 }
 
+/* --- POST /api/save-docx — Save Word doc directly to output folder --- */
+async function handleSaveDocx(req, res) {
+  try {
+    // Read binary body
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const body = Buffer.concat(chunks);
+
+    // Extract metadata from headers
+    const companyName = decodeURIComponent(req.headers['x-company-name'] || 'Unknown');
+    const cpName = decodeURIComponent(req.headers['x-cp-name'] || '');
+    const accountType = decodeURIComponent(req.headers['x-account-type'] || '');
+
+    // Determine save path
+    const outputBase = path.join(__dirname, 'output', 'FY27 Account Plans');
+    let saveDir = outputBase;
+
+    if (cpName) {
+      saveDir = path.join(outputBase, cpName);
+      if (accountType) {
+        const typeFolder = accountType.toLowerCase().includes('key') ? '1. Key Accounts' :
+                          accountType.toLowerCase().includes('target') ? '2. Target Accounts' : '3. Other Accounts';
+        saveDir = path.join(saveDir, typeFolder);
+      }
+    }
+
+    // Ensure directory exists
+    fs.mkdirSync(saveDir, { recursive: true });
+
+    const fileName = companyName.replace(/[\/\\:*?"<>|]/g, '-') + ' - Account Plan.docx';
+    const filePath = path.join(saveDir, fileName);
+
+    fs.writeFileSync(filePath, body);
+    const relativePath = path.relative(outputBase, filePath);
+
+    console.log(`[Save] ${fileName} → ${relativePath}`);
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, path: relativePath, fullPath: filePath }));
+  } catch (err) {
+    console.error('[Save] Error:', err.message);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Failed to save: ' + err.message }));
+  }
+}
+
 /* --- GET /api/key-status --- */
 function handleKeyStatus(req, res) {
   res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -206,6 +252,9 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === 'GET' && req.url === '/api/key-status') {
     return handleKeyStatus(req, res);
+  }
+  if (req.method === 'POST' && req.url === '/api/save-docx') {
+    return handleSaveDocx(req, res);
   }
 
   // Static files

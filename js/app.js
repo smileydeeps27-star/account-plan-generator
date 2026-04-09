@@ -29,7 +29,9 @@ function initHomeScreen() {
       accountContext: document.getElementById('input-context').value.trim(),
       suspectedCompetitors: document.getElementById('input-competitors').value.trim(),
       goalsNext90Days: document.getElementById('input-goals').value.trim(),
-      knownRisks: document.getElementById('input-risks').value.trim()
+      knownRisks: document.getElementById('input-risks').value.trim(),
+      cpName: document.getElementById('input-cp-name').value.trim(),
+      accountType: document.getElementById('input-account-type').value
     };
 
     AP.AppStore.set('isGenerating', true);

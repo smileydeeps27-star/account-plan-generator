@@ -4,12 +4,6 @@
 
 AP.PlanExport = (function() {
 
-  // Helper: truncate text
-  function trunc(text, max) {
-    if (!text) return '';
-    return text.length > max ? text.substring(0, max - 3) + '...' : text;
-  }
-
   // ===================================================================
   // MARKDOWN EXPORT — crisp, copy-paste-friendly
   // ===================================================================
@@ -70,7 +64,7 @@ AP.PlanExport = (function() {
       L.push('| Name | Title | Role | Approach |');
       L.push('|------|-------|------|----------|');
       plan.stakeholders.forEach(function(s) {
-        L.push('| **' + (s.name || '') + '** | ' + (s.title || '') + ' | ' + (s.roleInDeal || '') + ' | ' + trunc(s.engagementStrategy || s.notes || '', 100) + ' |');
+        L.push('| **' + (s.name || '') + '** | ' + (s.title || '') + ' | ' + (s.roleInDeal || '') + ' | ' + (s.engagementStrategy || s.notes || '') + ' |');
       });
       L.push('');
     }
@@ -82,7 +76,7 @@ AP.PlanExport = (function() {
       L.push('| Competitor | Status | Our Advantage |');
       L.push('|-----------|--------|---------------|');
       comp.landscape.forEach(function(c) {
-        L.push('| **' + (c.competitor || '') + '** | ' + (c.presence || '') + ' | ' + trunc(c.sellerAdvantage || c.aeraAdvantage || '', 100) + ' |');
+        L.push('| **' + (c.competitor || '') + '** | ' + (c.presence || '') + ' | ' + (c.sellerAdvantage || c.aeraAdvantage || '') + ' |');
       });
       L.push('');
     }
@@ -117,7 +111,7 @@ AP.PlanExport = (function() {
       L.push('| Risk | L/I | Mitigation |');
       L.push('|------|-----|-----------|');
       plan.risks.slice(0, 5).forEach(function(r) {
-        L.push('| ' + trunc(r.risk || '', 60) + ' | ' + (r.likelihood || '?')[0] + '/' + (r.impact || '?')[0] + ' | ' + trunc(r.mitigation || '', 80) + ' |');
+        L.push('| ' + (r.risk || '') + ' | ' + (r.likelihood || '?')[0] + '/' + (r.impact || '?')[0] + ' | ' + (r.mitigation || '') + ' |');
       });
       L.push('');
     }
@@ -435,11 +429,11 @@ AP.PlanExport = (function() {
     if (plan.stakeholders && plan.stakeholders.length) {
       sectionHead('Key Stakeholders');
       makeTable(
-        ['Name', 'Title', 'Role', 'Engagement Approach'],
+        ['Name', 'Title', 'Role', 'Approach'],
         plan.stakeholders.slice(0, 8).map(function(s) {
-          return [s.name || '', s.title || '', s.roleInDeal || '', trunc(s.engagementStrategy || s.notes || '', 120)];
+          return [s.name || '', s.title || '', s.roleInDeal || '', s.engagementStrategy || s.notes || ''];
         }),
-        [1800, 2400, 1200, 3960]
+        [1600, 2200, 1360, 4200]
       );
     }
 
@@ -447,11 +441,11 @@ AP.PlanExport = (function() {
     if (comp.landscape && comp.landscape.length) {
       sectionHead('Competitive Landscape');
       makeTable(
-        ['Competitor', 'Presence', 'Aera Advantage'],
+        ['Competitor', 'Status', 'Aera Advantage'],
         comp.landscape.slice(0, 5).map(function(c) {
-          return [c.competitor || '', c.presence || '', trunc(c.sellerAdvantage || c.aeraAdvantage || '', 140)];
+          return [c.competitor || '', c.presence || '', c.sellerAdvantage || c.aeraAdvantage || ''];
         }),
-        [1800, 1600, 5960]
+        [1600, 1400, 6360]
       );
     }
 
@@ -459,9 +453,9 @@ AP.PlanExport = (function() {
     if (val.metrics && val.metrics.length) {
       sectionHead('Value Potential');
       makeTable(
-        ['Opportunity', 'Projected Impact', 'Confidence'],
+        ['Opportunity', 'Impact', 'Confidence'],
         val.metrics.slice(0, 5).map(function(m) { return [m.metric || '', m.impact || '', m.confidence || '']; }),
-        [4000, 3360, 2000]
+        [4200, 3560, 1600]
       );
     }
 
@@ -474,7 +468,7 @@ AP.PlanExport = (function() {
         actionItems.map(function(a, i) {
           return [String(i + 1), a.action, a.owner, a.phase];
         }),
-        [400, 6160, 1200, 1600],
+        [360, 6400, 1200, 1400],
         { headerColor: H1_COLOR }
       );
     }
@@ -483,11 +477,11 @@ AP.PlanExport = (function() {
     if (plan.risks && plan.risks.length) {
       sectionHead('Key Risks');
       makeTable(
-        ['Risk', 'L / I', 'Mitigation', 'Owner'],
+        ['Risk', 'L/I', 'Mitigation', 'Owner'],
         plan.risks.slice(0, 5).map(function(r) {
-          return [trunc(r.risk || '', 100), (r.likelihood || '?')[0] + ' / ' + (r.impact || '?')[0], trunc(r.mitigation || '', 120), r.owner || ''];
+          return [r.risk || '', (r.likelihood || '?')[0] + '/' + (r.impact || '?')[0], r.mitigation || '', r.owner || ''];
         }),
-        [2800, 800, 3960, 1800]
+        [2800, 600, 4960, 1000]
       );
     }
 
@@ -527,14 +521,56 @@ AP.PlanExport = (function() {
     });
 
     var blob = await D.Packer.toBlob(doc);
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = AP.slugify(plan.companyName) + '-account-plan.docx';
-    a.click();
-    URL.revokeObjectURL(url);
-    AP.showToast('Word document downloaded');
+
+    // Try to auto-save to output folder via server
+    var saved = false;
+    try {
+      var cpName = (plan.userInputs && plan.userInputs.cpName) || '';
+      var accountType = (plan.userInputs && plan.userInputs.accountType) || '';
+      var saveRes = await fetch('/api/save-docx', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'X-Company-Name': encodeURIComponent(plan.companyName),
+          'X-CP-Name': encodeURIComponent(cpName),
+          'X-Account-Type': encodeURIComponent(accountType)
+        },
+        body: blob
+      });
+      var saveData = await saveRes.json();
+      if (saveData.success) {
+        saved = true;
+        AP.showToast('Saved: ' + saveData.path, 'success');
+      }
+    } catch (e) {
+      console.warn('Server save failed, falling back to download:', e);
+    }
+
+    // Fallback: browser download if server save failed
+    if (!saved) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = AP.slugify(plan.companyName) + '-account-plan.docx';
+      a.click();
+      URL.revokeObjectURL(url);
+      AP.showToast('Word document downloaded');
+    }
   }
 
-  return { toMarkdown: toMarkdown, toClipboard: toClipboard, toDocx: toDocx };
+  // Direct save without UI interaction — for batch processing
+  async function autoSave(plan, cpName, accountType) {
+    try { await loadDocxLib(); } catch (err) { throw new Error('Failed to load Word export library'); }
+    var logoData = await loadAeraLogo();
+
+    // Temporarily inject userInputs for the save
+    var origInputs = plan.userInputs || {};
+    plan.userInputs = Object.assign({}, origInputs, { cpName: cpName, accountType: accountType });
+
+    await toDocx(plan);
+
+    plan.userInputs = origInputs;
+  }
+
+  return { toMarkdown: toMarkdown, toClipboard: toClipboard, toDocx: toDocx, autoSave: autoSave };
 })();

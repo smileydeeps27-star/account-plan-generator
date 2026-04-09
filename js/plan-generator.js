@@ -90,16 +90,17 @@ AP.PlanGenerator = (function() {
 
   // ===== Grounded call with retry =====
   async function groundedCall(systemPrompt, message, maxTokens) {
-    for (var attempt = 1; attempt <= 2; attempt++) {
+    for (var attempt = 1; attempt <= 4; attempt++) {
       try {
         var r = await AP.ApiClient.call(systemPrompt, message, { maxTokens: maxTokens || 8192, useGrounding: true });
-        if (!r.text && attempt < 2) { console.log('[PlanGen] Empty grounded response, retrying...'); continue; }
+        if (!r.text && attempt < 4) { console.log('[PlanGen] Empty grounded response, retrying (attempt ' + attempt + '/4)...'); await new Promise(function(ok) { setTimeout(ok, 2000 * attempt); }); continue; }
         var parsed = parseJSON(r.text);
         if (parsed) return { data: parsed, sources: r.sources || [] };
-        if (attempt < 2) { console.log('[PlanGen] Grounded parse failed, retrying...'); continue; }
+        if (attempt < 4) { console.log('[PlanGen] Grounded parse failed, retrying (attempt ' + attempt + '/4)...'); continue; }
       } catch (err) {
         console.error('[PlanGen] Grounded call error:', err.message);
-        if (attempt >= 2) throw err;
+        if (attempt >= 4) throw err;
+        await new Promise(function(ok) { setTimeout(ok, 2000 * attempt); });
       }
     }
     return { data: null, sources: [] };
@@ -196,7 +197,7 @@ AP.PlanGenerator = (function() {
       'CRITICAL: Use REAL data. Include 5-7 news items, 4-6 financial rows, real business groups, specific strategic priorities.';
 
     try {
-      var r1 = await groundedCall(systemBase, call1Msg, 8192);
+      var r1 = await groundedCall(systemBase, call1Msg, 16384);
       if (r1.data) {
         plan.overview = r1.data.overview || null;
         plan.news = r1.data.news || [];
@@ -296,8 +297,8 @@ AP.PlanGenerator = (function() {
       '      "title": "Their actual job title",\n' +
       '      "roleInDeal": "Executive Sponsor|Champion|Evaluator|Influencer|Gatekeeper",\n' +
       '      "relevance": "High|Medium",\n' +
-      '      "notes": "2-3 SENTENCES: why they matter for a ' + sellerName + ' deal, what they care about",\n' +
-      '      "engagementStrategy": "3-4 SPECIFIC SENTENCES: exactly how to approach this person — what message, what proof point, what format (email/LinkedIn/exec briefing/conference), what to reference from their public statements",\n' +
+      '      "notes": "1 SENTENCE: why they matter for a ' + sellerName + ' deal",\n' +
+      '      "engagementStrategy": "1-2 SHORT SENTENCES max 40 words: specific approach — what message and format (email/LinkedIn/exec briefing)",\n' +
       '      "publicQuotes": [\n' +
       '        {"quote": "Direct quote or paraphrase from a real source", "source": "Where this was said — earnings call, interview, conference", "date": "When"}\n' +
       '      ],\n' +
@@ -313,7 +314,7 @@ AP.PlanGenerator = (function() {
       '- Target 5-8 stakeholders.';
 
     try {
-      var r4 = await groundedCall(systemBase, call4Msg, 8192);
+      var r4 = await groundedCall(systemBase, call4Msg, 12288);
       if (r4.data) {
         plan.stakeholders = r4.data.stakeholders || [];
         if (r4.sources.length) plan._sources = plan._sources.concat(r4.sources);
@@ -339,13 +340,13 @@ AP.PlanGenerator = (function() {
       '\n\nReturn JSON:\n' +
       '{\n' +
       '  "competitive": {\n' +
-      '    "positioning": "4-5 SENTENCES: How ' + sellerName + ' should position for THIS account. Reference their tech stack, pain points, and competitive dynamics.",\n' +
+      '    "positioning": "2-3 SHORT SENTENCES: How ' + sellerName + ' should position for THIS account.",\n' +
       '    "landscape": [\n' +
-      '      {"competitor": "Competitor Name", "presence": "Incumbent|Evaluating|Rumored|Potential Threat", "weakness": "2-3 SENTENCES about their weakness for THIS account", "sellerAdvantage": "2-3 SENTENCES about ' + sellerName + ' advantage", "battleCard": "1-2 sentence talk track for a CP", "userReported": false}\n' +
+      '      {"competitor": "Competitor Name", "presence": "Incumbent|Evaluating|Rumored|Potential Threat", "weakness": "1 SHORT SENTENCE about their key weakness", "sellerAdvantage": "1-2 SHORT SENTENCES max 30 words about ' + sellerName + ' advantage", "battleCard": "1 sentence talk track", "userReported": false}\n' +
       '    ]\n' +
       '  },\n' +
       '  "valueHypothesis": {\n' +
-      '    "executivePitch": "4-5 POWERFUL SENTENCES a CP could use verbatim to a CEO/COO. Reference their specific priorities, name specific numbers.",\n' +
+      '    "executivePitch": "2-3 POWERFUL SENTENCES max 60 words a CP could use verbatim to a CEO/COO. Reference their priorities and numbers.",\n' +
       '    "metrics": [\n' +
       '      {"metric": "Specific business improvement", "impact": "Dollar value scaled to this company", "confidence": "High|Medium|Low", "basis": "How this was estimated"}\n' +
       '    ],\n' +
@@ -391,21 +392,21 @@ AP.PlanGenerator = (function() {
       '    "day30": {\n' +
       '      "title": "Phase title",\n' +
       '      "whatGoodLooksLike": "2-3 SENTENCES describing success criteria at day 30",\n' +
-      '      "actions": [{"day": "1-5", "action": "Specific action with stakeholder names", "owner": "CP|SE|Marketing|CP + SE", "deliverable": "What is produced"}]\n' +
+      '      "actions": [{"day": "1-5", "action": "1 SHORT SENTENCE max 20 words: specific action with stakeholder name", "owner": "CP|SE|Marketing|CP + SE", "deliverable": "Short deliverable"}]\n' +
       '    },\n' +
       '    "day60": {\n' +
       '      "title": "Phase title",\n' +
-      '      "whatGoodLooksLike": "2-3 SENTENCES describing success at day 60",\n' +
-      '      "actions": [{"day": "31-35", "action": "Specific action", "owner": "Role", "deliverable": "Output"}]\n' +
+      '      "whatGoodLooksLike": "1 SENTENCE: measurable success criteria at day 60",\n' +
+      '      "actions": [{"day": "31-35", "action": "1 SHORT SENTENCE max 20 words", "owner": "Role", "deliverable": "Short deliverable"}]\n' +
       '    },\n' +
       '    "day90": {\n' +
       '      "title": "Phase title",\n' +
-      '      "whatGoodLooksLike": "2-3 SENTENCES describing success at day 90",\n' +
-      '      "actions": [{"day": "61-70", "action": "Specific action", "owner": "Role", "deliverable": "Output"}]\n' +
+      '      "whatGoodLooksLike": "1 SENTENCE: measurable success criteria at day 90",\n' +
+      '      "actions": [{"day": "61-70", "action": "1 SHORT SENTENCE max 20 words", "owner": "Role", "deliverable": "Short deliverable"}]\n' +
       '    }\n' +
       '  },\n' +
       '  "nextFiveSteps": [\n' +
-      '    {"step": 1, "action": "Immediate next action — be very specific", "owner": "Who does this", "by": "Target date or timeframe", "outcome": "Expected result"}\n' +
+      '    {"step": 1, "action": "1 SHORT SENTENCE max 15 words", "owner": "Who", "by": "Timeframe", "outcome": "Expected result in 5 words"}\n' +
       '  ]\n' +
       '}\n\n' +
       'CRITICAL:\n' +
@@ -468,12 +469,12 @@ AP.PlanGenerator = (function() {
       '{\n' +
       '  "risks": [\n' +
       '    {\n' +
-      '      "risk": "Specific risk for THIS deal — not generic",\n' +
+      '      "risk": "1 SHORT SENTENCE: specific risk for THIS deal",\n' +
       '      "category": "Organizational|Technical|Competitive|Commercial|Timeline",\n' +
       '      "likelihood": "High|Medium|Low",\n' +
       '      "impact": "High|Medium|Low",\n' +
-      '      "mitigation": "3-4 SENTENCES with concrete, Aera-specific mitigation. Reference specific playbooks, proof points, or tactics that ' + sellerName + ' would actually use.",\n' +
-      '      "owner": "Who owns this mitigation — CP, SE, Leadership, etc.",\n' +
+      '      "mitigation": "1-2 SHORT SENTENCES max 40 words with concrete Aera-specific mitigation.",\n' +
+      '      "owner": "CP|SE|Leadership|CP + SE",\n' +
       '      "userReported": false\n' +
       '    }\n' +
       '  ],\n' +
@@ -481,8 +482,8 @@ AP.PlanGenerator = (function() {
       '    {"metric": "Specific metric", "target": "Measurable target", "timeline": "By when", "measurement": "How to track"}\n' +
       '  ]\n' +
       '}\n\n' +
-      'Generate 5-8 risks specific to THIS account and deal. Mitigations must be actionable and align to the Aera Way sales methodology.\n' +
-      'Generate 6-8 success metrics aligned to the 30-60-90 day plan phases.';
+      'Generate 5 risks specific to THIS account. Keep risk descriptions and mitigations SHORT and actionable.\n' +
+      'Generate 5 success metrics aligned to the 30-60-90 day plan phases.';
 
     try {
       var r7 = await AP.ApiClient.call(systemBase, call7Msg, { maxTokens: 6144, jsonMode: true });

@@ -75,6 +75,23 @@
               </div>
             </div>
           </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label class="form-label" for="input-cp-name">CP / Owner (optional)</label>
+              <input type="text" id="input-cp-name" class="form-input" placeholder="e.g. Arvind Behera" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="input-account-type">Account Type (optional)</label>
+              <div class="select-wrapper">
+                <select id="input-account-type" class="form-select">
+                  <option value="">Not specified</option>
+                  <option value="Key Account">Key Account</option>
+                  <option value="Target Account">Target Account</option>
+                  <option value="Other Account">Other Account</option>
+                </select>
+              </div>
+            </div>
+          </div>
           <details class="account-context-section">
             <summary class="account-context-toggle">
               <span class="account-context-icon">&#9881;</span>
