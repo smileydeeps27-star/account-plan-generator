@@ -522,40 +522,32 @@ AP.PlanExport = (function() {
 
     var blob = await D.Packer.toBlob(doc);
 
-    // Try to auto-save to output folder via server
-    var saved = false;
+    // Always download to browser
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = plan.companyName.replace(/[\/\\:*?"<>|]/g, '-') + ' - Account Plan.docx';
+    a.click();
+    URL.revokeObjectURL(url);
+    AP.showToast('Word document downloaded');
+
+    // Also save to server folder if CP info provided (for batch tracking)
     try {
       var cpName = (plan.userInputs && plan.userInputs.cpName) || '';
       var accountType = (plan.userInputs && plan.userInputs.accountType) || '';
-      var saveRes = await fetch('/api/save-docx', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/octet-stream',
-          'X-Company-Name': encodeURIComponent(plan.companyName),
-          'X-CP-Name': encodeURIComponent(cpName),
-          'X-Account-Type': encodeURIComponent(accountType)
-        },
-        body: blob
-      });
-      var saveData = await saveRes.json();
-      if (saveData.success) {
-        saved = true;
-        AP.showToast('Saved: ' + saveData.path, 'success');
+      if (cpName) {
+        fetch('/api/save-docx', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'X-Company-Name': encodeURIComponent(plan.companyName),
+            'X-CP-Name': encodeURIComponent(cpName),
+            'X-Account-Type': encodeURIComponent(accountType)
+          },
+          body: blob
+        }).catch(function() {});
       }
-    } catch (e) {
-      console.warn('Server save failed, falling back to download:', e);
-    }
-
-    // Fallback: browser download if server save failed
-    if (!saved) {
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = AP.slugify(plan.companyName) + '-account-plan.docx';
-      a.click();
-      URL.revokeObjectURL(url);
-      AP.showToast('Word document downloaded');
-    }
+    } catch (e) { /* silent */ }
   }
 
   // Direct save without UI interaction — for batch processing
