@@ -569,33 +569,45 @@ AP.PlanExport = (function() {
     });
 
     var blob = await D.Packer.toBlob(doc);
+    var cpName = (plan.userInputs && plan.userInputs.cpName) || '';
+    var accountType = (plan.userInputs && plan.userInputs.accountType) || '';
+    var batchMode = !!cpName || window.__suppressDownloads === true;
 
-    // Always download to browser
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = plan.companyName.replace(/[\/\\:*?"<>|]/g, '-') + ' - Account Plan.docx';
-    a.click();
-    URL.revokeObjectURL(url);
-    AP.showToast('Word document downloaded');
+    // Browser download — skipped in batch mode (no popups)
+    if (!batchMode) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = plan.companyName.replace(/[\/\\:*?"<>|]/g, '-') + ' - Account Plan.docx';
+      a.click();
+      URL.revokeObjectURL(url);
+      AP.showToast('Word document downloaded');
+    }
 
-    // Also save to server folder if CP info provided (for batch tracking)
-    try {
-      var cpName = (plan.userInputs && plan.userInputs.cpName) || '';
-      var accountType = (plan.userInputs && plan.userInputs.accountType) || '';
-      if (cpName) {
-        fetch('/api/save-docx', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/octet-stream',
-            'X-Company-Name': encodeURIComponent(plan.companyName),
-            'X-CP-Name': encodeURIComponent(cpName),
-            'X-Account-Type': encodeURIComponent(accountType)
-          },
-          body: blob
-        }).catch(function() {});
+    // Server-side save when CP info provided. Awaited in batch mode so the
+    // caller knows the file actually landed before moving on.
+    if (cpName) {
+      var savePromise = fetch('/api/save-docx', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'X-Company-Name': encodeURIComponent(plan.companyName),
+          'X-CP-Name': encodeURIComponent(cpName),
+          'X-Account-Type': encodeURIComponent(accountType)
+        },
+        body: blob
+      });
+      if (batchMode) {
+        try {
+          var resp = await savePromise;
+          if (!resp.ok) throw new Error('save-docx failed: ' + resp.status);
+        } catch (e) {
+          throw new Error('Server save failed for ' + plan.companyName + ': ' + e.message);
+        }
+      } else {
+        savePromise.catch(function() {});
       }
-    } catch (e) { /* silent */ }
+    }
   }
 
   // Direct save without UI interaction — for batch processing

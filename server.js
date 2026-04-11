@@ -2,6 +2,7 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 
 // Load .env file if present
 try {
@@ -244,6 +245,72 @@ function handleKeyStatus(req, res) {
   res.end(JSON.stringify({ gemini: !!GEMINI_API_KEY }));
 }
 
+/* --- Helper: run a Python script and pipe its stdout JSON back --- */
+function runPython(scriptRelPath, args, cb) {
+  const py = spawn('python3', [path.join(__dirname, scriptRelPath), ...args], {
+    cwd: __dirname,
+    env: process.env
+  });
+  let stdout = '';
+  let stderr = '';
+  py.stdout.on('data', d => { stdout += d.toString(); });
+  py.stderr.on('data', d => { stderr += d.toString(); });
+  py.on('error', err => cb(err, null, null));
+  py.on('close', code => cb(null, code, { stdout, stderr }));
+}
+
+/* --- GET /api/batch-queue?size=10&cp=&type= --- */
+function handleBatchQueue(req, res) {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const args = ['--size', url.searchParams.get('size') || '10'];
+  const cp = url.searchParams.get('cp');
+  const type = url.searchParams.get('type');
+  if (cp) args.push('--cp', cp);
+  if (type) args.push('--type', type);
+
+  runPython('output/list-pending.py', args, (err, code, out) => {
+    if (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Failed to spawn python: ' + err.message }));
+      return;
+    }
+    if (code !== 0) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'list-pending.py exited ' + code, stderr: out.stderr }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(out.stdout);
+  });
+}
+
+/* --- POST /api/update-trackers — body: {"batchNum": N} --- */
+async function handleUpdateTrackers(req, res) {
+  let body = '';
+  for await (const chunk of req) body += chunk.toString();
+  let parsed = {};
+  try { parsed = body ? JSON.parse(body) : {}; } catch (e) { /* ignore */ }
+  const batchNum = String(parsed.batchNum || 1);
+
+  const env = Object.assign({}, process.env, { BATCH_NUM: batchNum });
+  const py = spawn('python3', [path.join(__dirname, 'output/update-trackers.py')], {
+    cwd: __dirname,
+    env: env
+  });
+  let stdout = '';
+  let stderr = '';
+  py.stdout.on('data', d => { stdout += d.toString(); });
+  py.stderr.on('data', d => { stderr += d.toString(); });
+  py.on('error', err => {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: err.message }));
+  });
+  py.on('close', code => {
+    res.writeHead(code === 0 ? 200 : 500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: code === 0, batchNum: batchNum, stdout: stdout, stderr: stderr }));
+  });
+}
+
 /* --- Server --- */
 const server = http.createServer(async (req, res) => {
   // API routes
@@ -255,6 +322,12 @@ const server = http.createServer(async (req, res) => {
   }
   if (req.method === 'POST' && req.url === '/api/save-docx') {
     return handleSaveDocx(req, res);
+  }
+  if (req.method === 'GET' && req.url.startsWith('/api/batch-queue')) {
+    return handleBatchQueue(req, res);
+  }
+  if (req.method === 'POST' && req.url === '/api/update-trackers') {
+    return handleUpdateTrackers(req, res);
   }
 
   // Static files

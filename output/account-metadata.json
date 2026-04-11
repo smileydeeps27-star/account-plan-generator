@@ -1,0 +1,42 @@
+{
+  "_comment": "Per-account industry/revenue overrides used by output/list-pending.py. Add an entry whenever the auto-mapped value from the tracker is wrong (most often for revenue tier). Industry must match a value in the form dropdown.",
+  "_industries": [
+    "CPG / FMCG", "Manufacturing", "Retail", "Pharmaceuticals", "Hi-Tech",
+    "Financial Services", "Energy", "Automotive", "Chemicals", "Healthcare",
+    "Telecommunications", "Aerospace & Defense"
+  ],
+  "_revenueTiers": [
+    "$500M - $1B", "$1B - $5B", "$5B - $20B", "$20B - $50B", "$50B+"
+  ],
+
+  "Amazon": { "revenue": "$50B+" },
+  "Apple": { "revenue": "$50B+" },
+  "Walmart": { "revenue": "$50B+" },
+  "Costco Wholesale": { "revenue": "$50B+" },
+  "Cisco Systems, Inc.": { "revenue": "$50B+" },
+  "AT&T": { "revenue": "$50B+" },
+  "Ford": { "revenue": "$50B+" },
+  "Tesla": { "revenue": "$50B+" },
+  "Tyson Foods": { "revenue": "$50B+" },
+  "McKesson": { "revenue": "$50B+", "industry": "Pharmaceuticals" },
+
+  "Adidas": { "revenue": "$20B - $50B" },
+  "Murphy USA": { "revenue": "$20B - $50B" },
+  "Albertsons (Safeway)": { "revenue": "$50B+" },
+  "Avnet": { "revenue": "$20B - $50B" },
+  "Boise Cascade": { "revenue": "$5B - $20B" },
+  "Deckers": { "revenue": "$1B - $5B" },
+
+  "Coca-Cola Southwest Beverages": { "revenue": "$1B - $5B" },
+  "OG&E": { "revenue": "$1B - $5B" },
+
+  "Entergy": { "revenue": "$5B - $20B" },
+  "Evergy": { "revenue": "$5B - $20B" },
+  "International Paper": { "revenue": "$5B - $20B" },
+  "JB Hunt Transport": { "revenue": "$5B - $20B" },
+  "Lumen Technologies": { "revenue": "$5B - $20B" },
+  "SpaceX": { "revenue": "$5B - $20B" },
+  "Ternium": { "revenue": "$5B - $20B" },
+  "Chint Electric": { "revenue": "$5B - $20B" },
+  "Amalgated Sugar Company": { "revenue": "$500M - $1B" }
+}

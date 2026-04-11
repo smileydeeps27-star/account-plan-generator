@@ -3,7 +3,10 @@ node_modules/
 data/plans/
 .DS_Store
 
-# Generated outputs (keep the generator script, ignore the rest)
+# Generated outputs (keep scripts, ignore data files)
 output/*
 !output/generate-tech-spec.js
+!output/list-pending.py
+!output/update-trackers.py
+!output/account-metadata.json
 Account-Plan-Generator-Spec.docx
