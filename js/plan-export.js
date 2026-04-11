@@ -308,6 +308,21 @@ AP.PlanExport = (function() {
       }));
     }
 
+    // Build TextRun array from a cell value. Cell can be:
+    //   - a string (renders as plain text)
+    //   - an object { text: "...", citations: [1,2] } (renders text + [N] superscript)
+    function cellRuns(cell) {
+      if (cell == null) return [new D.TextRun({ text: '', size: 18, font: FONT, color: TEXT_DARK })];
+      if (typeof cell === 'string' || typeof cell === 'number') {
+        return [new D.TextRun({ text: String(cell), size: 18, font: FONT, color: TEXT_DARK })];
+      }
+      var runs = [new D.TextRun({ text: String(cell.text || ''), size: 18, font: FONT, color: TEXT_DARK })];
+      if (cell.citations && cell.citations.length) {
+        runs.push(new D.TextRun({ text: ' [' + cell.citations.join(',') + ']', size: 14, font: FONT, color: H2_COLOR, superScript: true, bold: true }));
+      }
+      return runs;
+    }
+
     function makeTable(headers, rows, colWidthsArr, opts) {
       opts = opts || {};
       var colWidths = colWidthsArr || headers.map(function() { return Math.floor(PAGE_W / headers.length); });
@@ -334,7 +349,7 @@ AP.PlanExport = (function() {
             borders: cellBorders, width: { size: colWidths[i], type: D.WidthType.DXA },
             shading: ri % 2 === 1 ? { fill: altRowBg, type: shadingType } : undefined,
             margins: cellPad,
-            children: [new D.Paragraph({ children: [new D.TextRun({ text: String(cell || ''), size: 18, font: FONT, color: TEXT_DARK })] })]
+            children: [new D.Paragraph({ children: cellRuns(cell) })]
           });
         }) }));
       });
@@ -431,7 +446,12 @@ AP.PlanExport = (function() {
       makeTable(
         ['Name', 'Title', 'Role', 'Approach'],
         plan.stakeholders.slice(0, 8).map(function(s) {
-          return [s.name || '', s.title || '', s.roleInDeal || '', s.engagementStrategy || s.notes || ''];
+          return [
+            { text: s.name || '', citations: s._citations || [] },
+            s.title || '',
+            s.roleInDeal || '',
+            s.engagementStrategy || s.notes || ''
+          ];
         }),
         [1600, 2200, 1360, 4200]
       );
@@ -449,13 +469,15 @@ AP.PlanExport = (function() {
       );
     }
 
-    // ============== 5. VALUE POTENTIAL ==============
+    // ============== 5. VALUE POTENTIAL (with Basis column) ==============
     if (val.metrics && val.metrics.length) {
       sectionHead('Value Potential');
       makeTable(
-        ['Opportunity', 'Impact', 'Confidence'],
-        val.metrics.slice(0, 5).map(function(m) { return [m.metric || '', m.impact || '', m.confidence || '']; }),
-        [4200, 3560, 1600]
+        ['Opportunity', 'Impact', 'Confidence', 'Basis / Calculation'],
+        val.metrics.slice(0, 5).map(function(m) {
+          return [m.metric || '', m.impact || '', m.confidence || '', m.basis || ''];
+        }),
+        [2200, 1700, 1000, 4460]
       );
     }
 
@@ -485,17 +507,43 @@ AP.PlanExport = (function() {
       );
     }
 
-    // ============== 8. RECENT NEWS (compact) ==============
+    // ============== 8. RECENT NEWS (compact, with citations) ==============
     if (plan.news && plan.news.length) {
       sectionHead('Recent News');
       plan.news.slice(0, 4).forEach(function(n) {
+        var runs = [
+          new D.TextRun({ text: '\u25B8  ', size: 18, font: FONT, color: H2_COLOR }),
+          new D.TextRun({ text: (n.headline || ''), bold: true, size: 18, font: FONT, color: TEXT_DARK })
+        ];
+        if (n.date) runs.push(new D.TextRun({ text: '   (' + n.date + ')', size: 18, font: FONT, color: TEXT_MUTED }));
+        if (n._citations && n._citations.length) {
+          runs.push(new D.TextRun({ text: ' [' + n._citations.join(',') + ']', size: 14, font: FONT, color: H2_COLOR, superScript: true, bold: true }));
+        }
+        children.push(new D.Paragraph({ children: runs, spacing: { after: 80 } }));
+      });
+    }
+
+    // ============== 9. SOURCES & REFERENCES ==============
+    if (plan._references && plan._references.length) {
+      sectionHead('Sources & References');
+      children.push(new D.Paragraph({
+        children: [new D.TextRun({ text: 'Sources retrieved via Google Search grounding during plan generation. Numbers in superscript throughout this document refer to the entries below. Click any title to open the source.', size: 16, font: FONT, color: TEXT_MUTED, italics: true })],
+        spacing: { after: 200, line: 280 }
+      }));
+      plan._references.forEach(function(ref) {
+        var sectionLabel = ref.section === 'overview' ? 'Company Overview' : (ref.section === 'tech' ? 'Technology' : (ref.section === 'stakeholders' ? 'Stakeholders' : 'General'));
+        var titleText = ref.title || ref.url || 'Untitled';
+        var titleRuns = [new D.TextRun({ text: titleText, size: 18, font: FONT, color: H2_COLOR, bold: true, underline: {} })];
+        var titleChild = ref.url
+          ? new D.ExternalHyperlink({ link: ref.url, children: titleRuns })
+          : titleRuns[0];
         children.push(new D.Paragraph({
           children: [
-            new D.TextRun({ text: '\u25B8  ', size: 18, font: FONT, color: H2_COLOR }),
-            new D.TextRun({ text: (n.headline || ''), bold: true, size: 18, font: FONT, color: TEXT_DARK }),
-            new D.TextRun({ text: n.date ? '   (' + n.date + ')' : '', size: 18, font: FONT, color: TEXT_MUTED })
+            new D.TextRun({ text: '[' + ref.id + ']  ', bold: true, size: 18, font: FONT, color: H1_COLOR }),
+            titleChild,
+            new D.TextRun({ text: '   \u2022  ' + sectionLabel, size: 14, font: FONT, color: TEXT_MUTED, italics: true })
           ],
-          spacing: { after: 80 }
+          spacing: { before: 80, after: 80 }
         }));
       });
     }

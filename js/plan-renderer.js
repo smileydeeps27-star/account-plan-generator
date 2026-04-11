@@ -3,6 +3,12 @@
 AP.PlanRenderer = (function() {
   var e = AP.escapeHTML;
 
+  // Render inline citation superscript like [1,3]. Returns empty string if no citations.
+  function cite(citations) {
+    if (!citations || !citations.length) return '';
+    return '<sup class="citation-marker" title="See Sources tab">[' + citations.join(',') + ']</sup>';
+  }
+
   function render(plan) {
     var container = document.getElementById('plan-container');
     if (!container) return;
@@ -45,7 +51,8 @@ AP.PlanRenderer = (function() {
       { id: 'plan', label: '30-60-90' },
       { id: 'risks', label: 'Risks' },
       { id: 'actions', label: 'Actions' },
-      { id: 'meetingnotes', label: 'Notes' }
+      { id: 'meetingnotes', label: 'Notes' },
+      { id: 'sources', label: 'Sources' }
     ];
 
     html += '<div class="plan-tabs-wrapper">';
@@ -71,6 +78,7 @@ AP.PlanRenderer = (function() {
     html += renderRisksMetrics(plan);
     html += renderActionTracker(plan);
     html += renderMeetingNotes(plan);
+    html += renderSources(plan);
     html += renderOutreach(plan);
 
     container.innerHTML = html;
@@ -137,7 +145,7 @@ AP.PlanRenderer = (function() {
       html += '<h3 class="section-title">Financial Snapshot</h3>';
       html += '<table class="plan-table"><thead><tr><th>Metric</th><th>Current Year</th><th>Prior Year</th><th>Notes</th></tr></thead><tbody>';
       o.financialSnapshot.forEach(function(row) {
-        html += '<tr><td class="text-strong">' + e(row.metric) + '</td><td>' + e(row.currentYear) + '</td><td>' + e(row.priorYear) + '</td><td>' + e(row.notes) + '</td></tr>';
+        html += '<tr><td class="text-strong">' + e(row.metric) + cite(row._citations) + '</td><td>' + e(row.currentYear) + '</td><td>' + e(row.priorYear) + '</td><td>' + e(row.notes) + '</td></tr>';
       });
       html += '</tbody></table>';
     }
@@ -174,7 +182,7 @@ AP.PlanRenderer = (function() {
     } else {
       plan.news.forEach(function(n, i) {
         html += '<div class="news-item">';
-        html += '<div class="news-item-header"><div class="news-item-headline">' + (i + 1) + '. ' + e(n.headline) + '</div>';
+        html += '<div class="news-item-header"><div class="news-item-headline">' + (i + 1) + '. ' + e(n.headline) + cite(n._citations) + '</div>';
         if (n.date) html += '<div class="news-item-date">' + e(n.date) + '</div>';
         html += '</div>';
         if (n.detail) html += '<div class="news-item-detail">' + e(n.detail) + '</div>';
@@ -211,7 +219,7 @@ AP.PlanRenderer = (function() {
           var confClass = sys.confidence === 'Confirmed' ? 'badge-green' : (sys.confidence === 'Likely' ? 'badge-amber' : 'badge-muted');
           html += '<div class="tech-card">';
           html += '<div class="tech-card-header">';
-          html += '<span class="tech-vendor">' + e(sys.vendor) + '</span>';
+          html += '<span class="tech-vendor">' + e(sys.vendor) + cite(sys._citations) + '</span>';
           html += '<span class="badge ' + confClass + '">' + e(sys.confidence || 'Unknown') + '</span>';
           html += '</div>';
           if (sys.product) html += '<div class="tech-product">' + e(sys.product) + '</div>';
@@ -290,7 +298,7 @@ AP.PlanRenderer = (function() {
 
         html += '<div class="stakeholder-card">';
         html += '<div class="stakeholder-header">';
-        html += '<div><span class="stakeholder-name">' + e(s.name) + '</span>';
+        html += '<div><span class="stakeholder-name">' + e(s.name) + cite(s._citations) + '</span>';
         html += '<span class="stakeholder-title">' + e(s.title) + '</span></div>';
         html += '<div class="stakeholder-badges"><span class="role-badge ' + roleKey + '">' + e(s.roleInDeal) + '</span>';
         if (s.relevance) html += '<span class="badge badge-blue">' + e(s.relevance) + '</span>';
@@ -309,7 +317,7 @@ AP.PlanRenderer = (function() {
           html += '<div class="stakeholder-quotes">';
           s.publicQuotes.forEach(function(q) {
             html += '<blockquote class="stakeholder-quote">';
-            html += '<p>"' + e(q.quote) + '"</p>';
+            html += '<p>"' + e(q.quote) + '"' + cite(q._citations) + '</p>';
             html += '<cite>' + e(q.source || '') + (q.date ? ' (' + e(q.date) + ')' : '') + '</cite>';
             html += '</blockquote>';
           });
@@ -714,6 +722,52 @@ AP.PlanRenderer = (function() {
         html += '<div class="meeting-note-body">' + e(n.text || '').replace(/\n/g, '<br>') + '</div>';
         html += '</div>';
       }
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  // ===== MODULE 13a: Sources & References =====
+  function renderSources(plan) {
+    var refs = plan._references || [];
+    var html = '<div id="panel-sources" class="plan-panel">';
+    html += '<h3 class="section-title">Sources & References</h3>';
+    html += '<p class="text-muted mb-16">All sources retrieved via Google Search grounding during plan generation. Numbers in superscript like <sup class="citation-marker">[1]</sup> throughout this plan refer to entries below.</p>';
+
+    if (!refs.length) {
+      html += '<p class="text-muted">No grounding sources captured for this plan. This plan may have been generated without web search, or grounding chunks were not returned.</p>';
+    } else {
+      // Group by section
+      var groups = { overview: [], tech: [], stakeholders: [], general: [] };
+      refs.forEach(function(r) {
+        var key = groups[r.section] ? r.section : 'general';
+        groups[key].push(r);
+      });
+
+      var sectionLabels = {
+        overview: 'Company Overview & News',
+        tech: 'Technology Landscape',
+        stakeholders: 'Stakeholders',
+        general: 'Other'
+      };
+
+      ['overview', 'tech', 'stakeholders', 'general'].forEach(function(key) {
+        if (!groups[key].length) return;
+        html += '<h4 class="subsection-label mt-24">' + sectionLabels[key] + '</h4>';
+        html += '<ol class="sources-list">';
+        groups[key].forEach(function(ref) {
+          html += '<li class="source-item" id="ref-' + ref.id + '">';
+          html += '<span class="source-number">[' + ref.id + ']</span> ';
+          if (ref.url) {
+            html += '<a href="' + e(ref.url) + '" target="_blank" rel="noopener" class="source-link">' + e(ref.title || ref.url) + '</a>';
+          } else {
+            html += '<span>' + e(ref.title || 'Untitled') + '</span>';
+          }
+          html += '</li>';
+        });
+        html += '</ol>';
+      });
     }
 
     html += '</div>';

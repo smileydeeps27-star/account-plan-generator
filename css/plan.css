@@ -999,3 +999,54 @@
   .plan-table { font-size: 12px; }
   .plan-table th, .plan-table td { padding: 8px 10px; }
 }
+
+/* ===== Citations & Sources ===== */
+.citation-marker {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #2E75B6;
+  margin-left: 3px;
+  vertical-align: super;
+  cursor: help;
+  text-decoration: none;
+}
+.citation-marker:hover { color: #1F4E79; }
+
+.sources-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0 0;
+  counter-reset: none;
+}
+.source-item {
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  background: rgba(46, 117, 182, 0.04);
+  border-left: 3px solid #2E75B6;
+  border-radius: 0 6px 6px 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.source-number {
+  display: inline-block;
+  font-weight: 700;
+  color: #1F4E79;
+  margin-right: 6px;
+  min-width: 28px;
+}
+.source-link {
+  color: #1F4E79;
+  font-weight: 600;
+  text-decoration: none;
+  word-break: break-word;
+}
+.source-link:hover { text-decoration: underline; color: #2E75B6; }
+.source-url {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  margin-left: 34px;
+  word-break: break-all;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}

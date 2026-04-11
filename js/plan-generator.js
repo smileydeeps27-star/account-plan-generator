@@ -89,13 +89,17 @@ AP.PlanGenerator = (function() {
   }
 
   // ===== Grounded call with retry =====
-  async function groundedCall(systemPrompt, message, maxTokens) {
+  // sourceKey identifies which section the sources belong to (e.g. 'overview', 'tech', 'stakeholders')
+  async function groundedCall(systemPrompt, message, maxTokens, sourceKey) {
     for (var attempt = 1; attempt <= 4; attempt++) {
       try {
         var r = await AP.ApiClient.call(systemPrompt, message, { maxTokens: maxTokens || 8192, useGrounding: true });
         if (!r.text && attempt < 4) { console.log('[PlanGen] Empty grounded response, retrying (attempt ' + attempt + '/4)...'); await new Promise(function(ok) { setTimeout(ok, 2000 * attempt); }); continue; }
         var parsed = parseJSON(r.text);
-        if (parsed) return { data: parsed, sources: r.sources || [] };
+        if (parsed) {
+          var tagged = (r.sources || []).map(function(s) { return { url: s.url || '', title: s.title || '', section: sourceKey || 'general' }; });
+          return { data: parsed, sources: tagged };
+        }
         if (attempt < 4) { console.log('[PlanGen] Grounded parse failed, retrying (attempt ' + attempt + '/4)...'); continue; }
       } catch (err) {
         console.error('[PlanGen] Grounded call error:', err.message);
@@ -104,6 +108,78 @@ AP.PlanGenerator = (function() {
       }
     }
     return { data: null, sources: [] };
+  }
+
+  // ===== Citation Helpers =====
+
+  // Build numbered, de-duped references list from all grounding sources.
+  // De-dupes by TITLE (domain) so multiple Gemini grounding chunks pointing to the same source
+  // collapse into a single reference. Keeps the first URL seen for that title.
+  function buildReferences(sources) {
+    var seen = {};
+    var refs = [];
+    (sources || []).forEach(function(s) {
+      if (!s.url && !s.title) return;
+      // Normalize title for dedup: lowercase, strip non-alphanumeric
+      var titleKey = (s.title || s.url || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!titleKey) return;
+      if (seen[titleKey] != null) return;
+      seen[titleKey] = refs.length;
+      refs.push({ id: refs.length + 1, url: s.url || '', title: s.title || s.url || '', section: s.section || 'general' });
+    });
+    return refs;
+  }
+
+  // Fuzzy-match a text snippet (e.g. publication name) to references and return matching IDs.
+  // Conservative: only returns refs with strong keyword overlap. Prefers fewer accurate matches over noise.
+  // opts.section — restrict matching to refs from a specific section ('overview'|'tech'|'stakeholders')
+  // opts.companyName — strip company name words from keywords (avoids matching every ref to the company itself)
+  function findCitations(text, references, opts) {
+    if (!text || !references || !references.length) return [];
+    opts = opts || {};
+    var stopWords = ['from','with','have','that','this','will','about','their','call','transcript','interview','article','press','release','report','annual','quarterly','q1','q2','q3','q4','inc','llc','corp','ltd','plc','company','group','the','and','for','operations','continuing'];
+    var companyWords = (opts.companyName || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean);
+    var lower = String(text).toLowerCase();
+    var keywords = lower
+      .replace(/[^a-z0-9 ]+/g, ' ')
+      .split(/\s+/)
+      .filter(function(w) {
+        return w.length >= 3 && stopWords.indexOf(w) < 0 && companyWords.indexOf(w) < 0;
+      });
+    if (!keywords.length) return [];
+
+    var matches = [];
+    references.forEach(function(ref) {
+      if (opts.section && ref.section !== opts.section) return;
+      // Compress haystack to alphanumeric for matching across "fooddive.com" vs "Food Dive"
+      var hay = (ref.title + ' ' + ref.url).toLowerCase().replace(/[^a-z0-9]/g, '');
+      var hits = 0;
+      for (var i = 0; i < keywords.length; i++) {
+        if (hay.indexOf(keywords[i]) >= 0) hits++;
+      }
+      if (hits > 0) matches.push({ id: ref.id, hits: hits });
+    });
+    if (!matches.length) return [];
+    matches.sort(function(a, b) { return b.hits - a.hits; });
+
+    // Conservative: only return refs that TIE for the top hit count. Drops noise from weaker matches.
+    // Cap at 2 citations to keep output concise.
+    var topHits = matches[0].hits;
+    return matches.filter(function(m) { return m.hits === topHits; }).slice(0, 2).map(function(m) { return m.id; });
+  }
+
+  // Find references whose title contains the company's own domain — used as a fallback for facts
+  // that come from the company itself (financial reports, business divisions, strategic priorities).
+  function findCompanyOwnedRefs(companyName, references, section) {
+    if (!companyName || !references || !references.length) return [];
+    var name = companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    var matches = [];
+    references.forEach(function(ref) {
+      if (section && ref.section !== section) return;
+      var hay = (ref.title + ' ' + ref.url).toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (hay.indexOf(name) >= 0) matches.push(ref.id);
+    });
+    return matches.slice(0, 2);
   }
 
   // ===== Context helpers =====
@@ -197,7 +273,7 @@ AP.PlanGenerator = (function() {
       'CRITICAL: Use REAL data. Include 5-7 news items, 4-6 financial rows, real business groups, specific strategic priorities.';
 
     try {
-      var r1 = await groundedCall(systemBase, call1Msg, 16384);
+      var r1 = await groundedCall(systemBase, call1Msg, 16384, 'overview');
       if (r1.data) {
         plan.overview = r1.data.overview || null;
         plan.news = r1.data.news || [];
@@ -236,7 +312,7 @@ AP.PlanGenerator = (function() {
       'CRITICAL: Only report systems you find EVIDENCE for. Mark confidence level honestly. Do NOT guess or hallucinate vendor relationships.';
 
     try {
-      var r2 = await groundedCall(systemBase, call2Msg, 4096);
+      var r2 = await groundedCall(systemBase, call2Msg, 4096, 'tech');
       if (r2.data) {
         plan.technologyLandscape = r2.data.technologyLandscape || null;
         if (r2.sources.length) plan._sources = plan._sources.concat(r2.sources);
@@ -314,7 +390,7 @@ AP.PlanGenerator = (function() {
       '- Target 5-8 stakeholders.';
 
     try {
-      var r4 = await groundedCall(systemBase, call4Msg, 12288);
+      var r4 = await groundedCall(systemBase, call4Msg, 12288, 'stakeholders');
       if (r4.data) {
         plan.stakeholders = r4.data.stakeholders || [];
         if (r4.sources.length) plan._sources = plan._sources.concat(r4.sources);
@@ -348,11 +424,12 @@ AP.PlanGenerator = (function() {
       '  "valueHypothesis": {\n' +
       '    "executivePitch": "2-3 POWERFUL SENTENCES max 60 words a CP could use verbatim to a CEO/COO. Reference their priorities and numbers.",\n' +
       '    "metrics": [\n' +
-      '      {"metric": "Specific business improvement", "impact": "Dollar value scaled to this company", "confidence": "High|Medium|Low", "basis": "How this was estimated"}\n' +
+      '      {"metric": "Specific business improvement", "impact": "Dollar value scaled to this company", "confidence": "High|Medium|Low", "basis": "REQUIRED — show transparent calculation. Format: \\"X% of $Y revenue/spend = $Z, based on [benchmark source]\\". Example: \\"0.5-1% of $60B revenue = $300M-$600M, based on typical CPG working capital improvement from supply chain transformation\\". Reference the SPECIFIC revenue/cost figure from this company\'s overview, the benchmark percentage, and the calculation. NEVER leave this vague."}\n' +
       '    ],\n' +
       '    "whyNow": "2-3 SENTENCES about urgency — why they should act now rather than next year"\n' +
       '  }\n' +
-      '}\n\nGenerate 4-6 competitors. Generate 4-6 value metrics.';
+      '}\n\nGenerate 4-6 competitors. Generate 4-6 value metrics.\n\n' +
+      'CRITICAL FOR VALUE METRICS: Every "basis" field must show the math. Use the company\'s ACTUAL revenue/cost numbers from the overview. Cite the benchmark percentage and where it comes from (industry analyst, Aera customer outcomes, transformation case studies, etc.). Vague statements like "based on industry benchmarks" are NOT acceptable — show the percentage AND the dollar calculation.';
 
     try {
       var r5 = await AP.ApiClient.call(systemBase, call5Msg, { maxTokens: 8192, jsonMode: true });
@@ -493,6 +570,65 @@ AP.PlanGenerator = (function() {
         plan.successMetrics = p7.successMetrics || [];
       }
     } catch (err) { console.error('[PlanGen] Call 7 error:', err.message); }
+
+    // ===== Build numbered references and apply inline citations =====
+    plan._references = buildReferences(plan._sources);
+
+    var citeOpts = function(section) { return { section: section, companyName: companyName }; };
+    var companyRefsOverview = findCompanyOwnedRefs(companyName, plan._references, 'overview');
+    var companyRefsTech = findCompanyOwnedRefs(companyName, plan._references, 'tech');
+    var companyRefsStake = findCompanyOwnedRefs(companyName, plan._references, 'stakeholders');
+
+    // News: fuzzy-match publication name + headline keywords to grounding chunks
+    if (plan.news && plan.news.length) {
+      plan.news.forEach(function(n) {
+        var hint = (n.source || '') + ' ' + (n.headline || '');
+        var hits = findCitations(hint, plan._references, citeOpts('overview'));
+        // If no fuzzy match found, fall back to company-owned refs (e.g., for IR press releases)
+        n._citations = hits.length ? hits : companyRefsOverview;
+      });
+    }
+
+    // Financial snapshot: comes from company filings / IR — use company-owned refs as primary source
+    if (plan.overview && plan.overview.financialSnapshot && plan.overview.financialSnapshot.length) {
+      plan.overview.financialSnapshot.forEach(function(row) {
+        row._citations = companyRefsOverview;
+      });
+    }
+
+    // Business groups: company-defined — use company-owned refs
+    if (plan.overview && plan.overview.businessGroups && plan.overview.businessGroups.length) {
+      plan.overview.businessGroups.forEach(function(bg) {
+        bg._citations = companyRefsOverview;
+      });
+    }
+
+    // Tech systems: try fuzzy match against vendor/product/evidence; fall back to company-owned
+    if (plan.technologyLandscape && plan.technologyLandscape.knownSystems && plan.technologyLandscape.knownSystems.length) {
+      plan.technologyLandscape.knownSystems.forEach(function(sys) {
+        var hint = (sys.vendor || '') + ' ' + (sys.product || '') + ' ' + (sys.evidence || '');
+        var hits = findCitations(hint, plan._references, citeOpts('tech'));
+        sys._citations = hits.length ? hits : companyRefsTech;
+      });
+    }
+
+    // Stakeholders: try fuzzy match; if Call 4 returned no grounding sources, fall back to overview-section refs
+    var stakeFallback = companyRefsStake.length ? companyRefsStake : companyRefsOverview;
+    if (plan.stakeholders && plan.stakeholders.length) {
+      plan.stakeholders.forEach(function(s) {
+        var hint = (s.name || '') + ' ' + (s.title || '');
+        var hits = findCitations(hint, plan._references, citeOpts('stakeholders'));
+        if (!hits.length) hits = findCitations(hint, plan._references, citeOpts('overview'));
+        s._citations = hits.length ? hits : stakeFallback;
+        if (s.publicQuotes && s.publicQuotes.length) {
+          s.publicQuotes.forEach(function(q) {
+            var qhits = findCitations((q.source || '') + ' ' + (q.quote || ''), plan._references, citeOpts('stakeholders'));
+            if (!qhits.length) qhits = findCitations((q.source || '') + ' ' + (q.quote || ''), plan._references, citeOpts('overview'));
+            q._citations = qhits.length ? qhits : stakeFallback;
+          });
+        }
+      });
+    }
 
     // Fallback success metrics
     if (!plan.successMetrics || plan.successMetrics.length === 0) {
