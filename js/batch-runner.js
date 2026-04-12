@@ -223,7 +223,7 @@
         break;
       }
       try {
-        await generateOne(i);
+        await withTimeout(generateOne(i), ACCOUNT_TIMEOUT_MS, state.queue[i].name);
       } catch (e) {
         err('    FAILED: ' + e.message);
         updateRow(i, 'fail', e.message.substring(0, 40));
@@ -284,6 +284,20 @@
 
   // ---------- Helpers ----------
   function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+  // Wrap a promise with a timeout — rejects if it takes longer than ms.
+  var ACCOUNT_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes per account
+  function withTimeout(promise, ms, label) {
+    return new Promise(function(resolve, reject) {
+      var timer = setTimeout(function() {
+        reject(new Error('Timed out after ' + (ms / 1000) + 's: ' + label));
+      }, ms);
+      promise.then(
+        function(v) { clearTimeout(timer); resolve(v); },
+        function(e) { clearTimeout(timer); reject(e); }
+      );
+    });
+  }
 
   // ---------- Progress from generator (drives a 1-line running status) ----------
   AP.EventBus.on('plan:progress', function(p) {
