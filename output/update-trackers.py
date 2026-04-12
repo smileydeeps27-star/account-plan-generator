@@ -247,6 +247,9 @@ def update_exec_tracker(generated):
     accounts_updated = 0
     unmatched = []
 
+    # Build a list of all rows for indexed access
+    all_rows = list(ws.iter_rows(min_row=2))
+
     for gen_name, d in generated.items():
         if gen_name in SKIP_UNMATCHED:
             continue
@@ -255,13 +258,27 @@ def update_exec_tracker(generated):
             unmatched.append(gen_name)
             continue
 
+        # Find the first row of this account group (column B matches).
+        # Then continue through subsequent rows that belong to the same group
+        # (column A is None = continuation rows for the same account).
         touched = False
-        for row in ws.iter_rows(min_row=2):
-            if (row[1].value or "").strip() != mapped:
+        in_group = False
+        for row in all_rows:
+            acct_val = (row[1].value or "").strip()
+
+            if acct_val == mapped:
+                in_group = True
+            elif in_group:
+                # We're past the first row — stay in group only if col A is None
+                # (continuation row). Once col A has a value, we've hit the next account.
+                if row[0].value is not None:
+                    break  # next account group starts here
+
+            if not in_group:
                 continue
 
             # First row of the account group carries metadata
-            if row[0].value is not None:
+            if acct_val == mapped and row[0].value is not None:
                 row[5].value = d.get("industry", "")
                 row[6].value = d.get("revenue", "")
                 row[7].value = d.get("employees", "")
@@ -272,6 +289,7 @@ def update_exec_tracker(generated):
                 row[24].value = d.get("path", "")
                 touched = True
 
+            # Write action data into each row that has an action number
             an = row[11].value
             if isinstance(an, int) and 1 <= an <= len(d.get("actions", [])):
                 a = d["actions"][an - 1]
@@ -279,6 +297,7 @@ def update_exec_tracker(generated):
                 row[13].value = a["owner"]
                 row[14].value = "Pending"
 
+            # Write stakeholder data into each row that has a stakeholder number
             sn = row[17].value
             if isinstance(sn, int) and 1 <= sn <= len(d.get("stakeholders", [])):
                 s = d["stakeholders"][sn - 1]
