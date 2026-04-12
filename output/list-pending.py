@@ -51,6 +51,13 @@ INDUSTRY_MAP = {
 
 DEFAULT_REVENUE = "$5B - $20B"
 
+# Priority order: Key first, then Target, then Other, then anything else
+ACCOUNT_TYPE_PRIORITY = {
+    "Key Account": 0,
+    "Target Account": 1,
+    "Other Account": 2,
+}
+
 
 def map_industry(gtm, sub):
     if gtm and gtm in INDUSTRY_MAP:
@@ -89,8 +96,7 @@ def main():
     wb = openpyxl.load_workbook(TRACKER, data_only=True)
     ws = wb.active
 
-    pending = []
-    total_pending = 0
+    all_pending = []
     for row in ws.iter_rows(min_row=2, values_only=True):
         if not row or len(row) < 2:
             continue
@@ -114,15 +120,11 @@ def main():
         if args.type and (account_type or "").strip().lower() != args.type.strip().lower():
             continue
 
-        total_pending += 1
-        if len(pending) >= args.size:
-            continue
-
         ov = overrides.get(account, {}) if isinstance(overrides, dict) else {}
         industry = ov.get("industry") or map_industry(gtm, sub)
         revenue = ov.get("revenue") or DEFAULT_REVENUE
 
-        pending.append({
+        all_pending.append({
             "row": num,
             "name": account,
             "cp": cp or "",
@@ -133,6 +135,13 @@ def main():
             "industry": industry,
             "revenue": revenue,
         })
+
+    # Sort: Key Account first, then Target Account, then Other Account.
+    # Within each type group, preserve original tracker order.
+    all_pending.sort(key=lambda a: ACCOUNT_TYPE_PRIORITY.get(a["accountType"], 3))
+
+    total_pending = len(all_pending)
+    pending = all_pending[: args.size]
 
     out = {
         "pending": pending,
