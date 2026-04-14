@@ -265,6 +265,21 @@
     $('btn-batch-stop').disabled = true;
   }
 
+  async function runAll() {
+    if (state.running) return;
+    info('Fetching total pending count...');
+    try {
+      var q = await fetchQueue(999, $('batch-cp').value.trim(), $('batch-type').value);
+      var total = q.totalPending || q.count || 0;
+      if (total === 0) { warn('Nothing pending. Done.'); return; }
+      $('batch-size').value = total;
+      ok('Running all ' + total + ' remaining accounts.');
+      await startBatch();
+    } catch (e) {
+      err('Run All failed: ' + e.message);
+    }
+  }
+
   async function previewQueue() {
     var size = parseInt($('batch-size').value, 10) || 10;
     var cp   = $('batch-cp').value.trim();
@@ -316,6 +331,7 @@
     if (AP.AeraContent && AP.AeraContent.load) AP.AeraContent.load();
 
     $('btn-batch-start').addEventListener('click', startBatch);
+    $('btn-batch-all').addEventListener('click', runAll);
     $('btn-batch-stop').addEventListener('click', stopBatch);
     $('btn-batch-preview').addEventListener('click', previewQueue);
 
