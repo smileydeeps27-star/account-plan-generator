@@ -42,6 +42,8 @@ NAME_MAP = {
     "McLane Company": "McLane",
     "Hewlett Packard Enterprise": "HPE",
     "Carlsberg Group": "Carlsberg / Britvic",
+    "Stellantis - General Motors": "Stellantis / General Motors",
+    "BAe Systems (-)": "BAe Systems (?)",
 }
 
 # Names known to be intentionally absent from the tracker (e.g. smoke tests)
@@ -148,6 +150,10 @@ def parse_plan_docx(fpath):
 
 
 def collect_generated_plans():
+    """Returns dict keyed by (cp_dir, company_name) -> parsed data.
+    This handles accounts that appear under multiple CPs (e.g. Adidas
+    under both Charles Carter and Michael Spaeth).
+    """
     results = {}
     if not os.path.isdir(OUTPUT_BASE):
         print(f"ERROR: {OUTPUT_BASE} not found", file=sys.stderr)
@@ -167,7 +173,7 @@ def collect_generated_plans():
                 company = f.replace(" - Account Plan.docx", "")
                 fpath = os.path.join(type_path, f)
                 try:
-                    results[company] = parse_plan_docx(fpath)
+                    results[(cp_dir, company)] = parse_plan_docx(fpath)
                 except Exception as e:
                     print(f"  WARN: failed to parse {fpath}: {e}", file=sys.stderr)
     return results
@@ -195,7 +201,7 @@ def update_batch_tracker(generated):
     updated = 0
     unmatched = []
 
-    for gen_name, d in generated.items():
+    for (cp_dir, gen_name), d in generated.items():
         if gen_name in SKIP_UNMATCHED:
             continue
         mapped = tracker_name_for(gen_name, tracker_names)
@@ -204,7 +210,9 @@ def update_batch_tracker(generated):
             continue
 
         for row in ws.iter_rows(min_row=2):
-            if (row[1].value or "").strip() == mapped:
+            row_name = (row[1].value or "").strip()
+            row_cp = (row[2].value or "").strip()
+            if row_name == mapped and norm(row_cp) == norm(cp_dir):
                 row[8].value = "Complete"
                 row[9].value = BATCH_NUM
                 row[10].value = now
@@ -250,7 +258,7 @@ def update_exec_tracker(generated):
     # Build a list of all rows for indexed access
     all_rows = list(ws.iter_rows(min_row=2))
 
-    for gen_name, d in generated.items():
+    for (cp_dir, gen_name), d in generated.items():
         if gen_name in SKIP_UNMATCHED:
             continue
         mapped = tracker_name_for(gen_name, tracker_names)
@@ -258,15 +266,16 @@ def update_exec_tracker(generated):
             unmatched.append(gen_name)
             continue
 
-        # Find the first row of this account group (column B matches).
+        # Find the first row of this account group (column B + column C match).
         # Then continue through subsequent rows that belong to the same group
         # (column A is None = continuation rows for the same account).
         touched = False
         in_group = False
         for row in all_rows:
             acct_val = (row[1].value or "").strip()
+            cp_val = (row[2].value or "").strip()
 
-            if acct_val == mapped:
+            if acct_val == mapped and norm(cp_val) == norm(cp_dir):
                 in_group = True
             elif in_group:
                 # We're past the first row — stay in group only if col A is None
