@@ -331,7 +331,8 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Static files
-  let filePath = req.url === '/' ? '/index.html' : req.url.split('?')[0];
+  let filePath = req.url.split('?')[0];
+  if (filePath === '/' || filePath === '') filePath = '/index.html';
   filePath = decodeURIComponent(filePath);
   filePath = path.join(__dirname, filePath);
 
