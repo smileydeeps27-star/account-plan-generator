@@ -52,6 +52,50 @@ function initHomeScreen() {
 
   // Load saved plans list
   refreshSavedPlansList();
+
+  // Prefill from URL params (e.g. when launched from Revenue Intelligence)
+  prefillFromUrl(form);
+}
+
+function prefillFromUrl(form) {
+  try {
+    var p = new URLSearchParams(window.location.search);
+    if (!p.toString()) return;
+
+    var setInput = function(id, val) {
+      if (val == null) return;
+      var el = document.getElementById(id);
+      if (el) el.value = val;
+    };
+    var setSelect = function(id, val) {
+      if (!val) return;
+      var el = document.getElementById(id);
+      if (!el) return;
+      for (var i = 0; i < el.options.length; i++) {
+        if (el.options[i].value === val) { el.selectedIndex = i; return; }
+      }
+    };
+
+    setInput('input-company', p.get('company'));
+    setSelect('input-industry', p.get('industry'));
+    setSelect('input-revenue', p.get('revenue'));
+    setInput('input-cp-name', p.get('cp'));
+    setSelect('input-account-type', p.get('accountType'));
+    setInput('input-context', p.get('context'));
+    setInput('input-competitors', p.get('competitors'));
+    setInput('input-goals', p.get('goals'));
+    setInput('input-risks', p.get('risks'));
+    setSelect('input-deal-stage', p.get('dealStage'));
+
+    if (p.get('autostart') === '1' && p.get('company')) {
+      setTimeout(function() {
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.dispatchEvent(new Event('submit', { cancelable: true }));
+      }, 400);
+    }
+  } catch (e) {
+    console.warn('prefillFromUrl failed:', e);
+  }
 }
 
 function refreshSavedPlansList() {
