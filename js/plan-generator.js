@@ -88,8 +88,10 @@ AP.PlanGenerator = (function() {
     return null;
   }
 
-  // ===== Grounded call with retry =====
+  // ===== Grounded call with retry + ungrounded fallback =====
   // sourceKey identifies which section the sources belong to (e.g. 'overview', 'tech', 'stakeholders')
+  // If grounded search fails after all retries (common for lesser-known companies),
+  // falls back to an ungrounded call so Gemini uses its training knowledge instead.
   async function groundedCall(systemPrompt, message, maxTokens, sourceKey) {
     for (var attempt = 1; attempt <= 4; attempt++) {
       try {
@@ -103,10 +105,26 @@ AP.PlanGenerator = (function() {
         if (attempt < 4) { console.log('[PlanGen] Grounded parse failed, retrying (attempt ' + attempt + '/4)...'); continue; }
       } catch (err) {
         console.error('[PlanGen] Grounded call error:', err.message);
-        if (attempt >= 4) throw err;
+        if (attempt >= 4) break; // fall through to ungrounded fallback instead of throwing
         await new Promise(function(ok) { setTimeout(ok, 2000 * attempt); });
       }
     }
+
+    // Fallback: retry WITHOUT grounding so Gemini uses its training knowledge.
+    // This is critical for lesser-known companies where Google Search returns no results.
+    console.log('[PlanGen] Grounded search failed for "' + sourceKey + '", falling back to ungrounded call...');
+    try {
+      var fallbackMsg = message + '\n\nNote: If you cannot find specific real-time data, use your best knowledge to provide a reasonable and helpful account profile. Clearly indicate where information is estimated or based on general industry knowledge.';
+      var fr = await AP.ApiClient.call(systemPrompt, fallbackMsg, { maxTokens: maxTokens || 8192, jsonMode: true });
+      var fallbackParsed = parseJSON(fr.text);
+      if (fallbackParsed) {
+        console.log('[PlanGen] Ungrounded fallback succeeded for "' + sourceKey + '"');
+        return { data: fallbackParsed, sources: [] };
+      }
+    } catch (fallbackErr) {
+      console.error('[PlanGen] Ungrounded fallback also failed for "' + sourceKey + '":', fallbackErr.message);
+    }
+
     return { data: null, sources: [] };
   }
 
