@@ -133,10 +133,42 @@ AP.PlanExport = (function() {
   }
 
   // ===================================================================
-  // Build consolidated Action Plan — max 10 items from 30-60-90 + next steps
+  // Build consolidated Action Plan — prefers plan.actionTracker (live, editable source of truth
+  // that includes user-added custom actions). Falls back to dayPlan + nextFiveSteps for legacy
+  // plans that were generated before the action tracker was introduced.
   // ===================================================================
   function buildActionPlan(plan) {
     var items = [];
+
+    // Preferred path: use the action tracker — it already merges day30/60/90 + nextFiveSteps
+    // and includes user-added custom actions. This is what the user sees in the Actions tab.
+    if (plan.actionTracker && plan.actionTracker.length) {
+      var sourceToPhase = {
+        day30: 'Day 1-30',
+        day60: 'Day 31-60',
+        day90: 'Day 61-90',
+        next5: 'Immediate',
+        custom: 'Custom'
+      };
+      plan.actionTracker.forEach(function(a) {
+        items.push({
+          action: a.action || '',
+          owner: a.owner || 'CP',
+          phase: sourceToPhase[a.source] || 'Custom',
+          dueDate: a.dueDate || '',
+          status: a.status || 'Not Started',
+          source: a.source || 'custom'
+        });
+      });
+
+      // Order: Immediate → Day 1-30 → Day 31-60 → Day 61-90 → Custom (user-added go last so
+      // they're easy to spot). Cap at 25 to keep the doc compact but cover typical use.
+      var phaseOrderTracker = { 'Immediate': 0, 'Day 1-30': 1, 'Day 31-60': 2, 'Day 61-90': 3, 'Custom': 4 };
+      items.sort(function(a, b) { return (phaseOrderTracker[a.phase] || 9) - (phaseOrderTracker[b.phase] || 9); });
+      return items.slice(0, 25);
+    }
+
+    // Fallback: legacy plans without actionTracker — pull from dayPlan + nextFiveSteps directly.
     var dp = plan.dayPlan || {};
 
     // Pull top actions from each 30-60-90 phase
@@ -571,7 +603,7 @@ AP.PlanExport = (function() {
     var blob = await D.Packer.toBlob(doc);
     var cpName = (plan.userInputs && plan.userInputs.cpName) || '';
     var accountType = (plan.userInputs && plan.userInputs.accountType) || '';
-    var batchMode = !!cpName || window.__suppressDownloads === true;
+    var batchMode = window.__suppressDownloads === true;
 
     // Browser download — skipped in batch mode (no popups)
     if (!batchMode) {
