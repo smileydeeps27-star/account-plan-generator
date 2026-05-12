@@ -60,6 +60,11 @@ AP.navigateTo = function(screenId) {
 
   AP.AppStore.set('currentScreen', screenId);
   window.scrollTo(0, 0);
+
+  // Refresh saved-plans list whenever we land on home so newly saved/deleted plans show up.
+  if (screenId === 'home' && typeof AP.refreshSavedPlansList === 'function') {
+    AP.refreshSavedPlansList();
+  }
 };
 
 /* --- Helpers --- */

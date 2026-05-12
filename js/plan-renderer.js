@@ -33,7 +33,7 @@ AP.PlanRenderer = (function() {
     html += '<button class="btn btn-sm btn-secondary" id="btn-save-plan">Save</button>';
     html += '<button class="btn btn-sm btn-outreach" id="btn-go-outreach">&#9993; Outreach Emails</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-copy-md">Copy Markdown</button>';
-    html += '<button class="btn btn-sm btn-secondary" id="btn-export-docx">Export Word</button>';
+    html += '<button class="btn btn-sm btn-secondary" id="btn-export-docx">Download Plan</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-export-json">Export JSON</button>';
     html += '</div>';
     html += '</div>';
@@ -820,7 +820,12 @@ AP.PlanRenderer = (function() {
   // ===== Wire Action Buttons =====
   function wireActions(plan) {
     var saveBtn = document.getElementById('btn-save-plan');
-    if (saveBtn) saveBtn.addEventListener('click', function() { AP.PlanPersistence.saveLocal(plan); AP.showToast('Plan saved'); });
+    if (saveBtn) saveBtn.addEventListener('click', function() {
+      AP.PlanPersistence.saveLocal(plan);
+      AP.showToast('Plan saved');
+      // Keep the home-page saved-plans list in sync so it appears next time the user navigates back.
+      if (typeof AP.refreshSavedPlansList === 'function') AP.refreshSavedPlansList();
+    });
 
     var copyBtn = document.getElementById('btn-copy-md');
     if (copyBtn) copyBtn.addEventListener('click', function() { var md = AP.PlanExport.toMarkdown(plan); AP.copyToClipboard(md); });

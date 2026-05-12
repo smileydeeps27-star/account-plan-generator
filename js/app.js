@@ -98,6 +98,9 @@ function prefillFromUrl(form) {
   }
 }
 
+// Exposed on AP namespace so other modules / navigation can refresh after save/delete.
+AP.refreshSavedPlansList = refreshSavedPlansList;
+
 function refreshSavedPlansList() {
   var container = document.getElementById('saved-plans-list');
   if (!container) return;
