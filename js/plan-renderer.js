@@ -32,9 +32,7 @@ AP.PlanRenderer = (function() {
     html += '<button class="btn btn-sm btn-secondary" id="btn-new-plan">&#8592; Generate New Plan</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-save-plan">Save</button>';
     html += '<button class="btn btn-sm btn-outreach" id="btn-go-outreach">&#9993; Outreach Emails</button>';
-    html += '<button class="btn btn-sm btn-secondary" id="btn-copy-md">Copy Markdown</button>';
     html += '<button class="btn btn-sm btn-secondary" id="btn-export-docx">Download Plan</button>';
-    html += '<button class="btn btn-sm btn-secondary" id="btn-export-json">Export JSON</button>';
     html += '</div>';
     html += '</div>';
 
@@ -825,14 +823,8 @@ AP.PlanRenderer = (function() {
       if (typeof AP.refreshSavedPlansList === 'function') AP.refreshSavedPlansList();
     });
 
-    var copyBtn = document.getElementById('btn-copy-md');
-    if (copyBtn) copyBtn.addEventListener('click', function() { var md = AP.PlanExport.toMarkdown(plan); AP.copyToClipboard(md); });
-
     var docxBtn = document.getElementById('btn-export-docx');
     if (docxBtn) docxBtn.addEventListener('click', function() { AP.PlanExport.toDocx(plan); });
-
-    var jsonBtn = document.getElementById('btn-export-json');
-    if (jsonBtn) jsonBtn.addEventListener('click', function() { AP.PlanPersistence.downloadJSON(plan); });
 
     // New Plan button
     var newBtn = document.getElementById('btn-new-plan');
