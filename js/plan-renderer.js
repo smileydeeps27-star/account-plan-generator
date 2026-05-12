@@ -672,10 +672,8 @@ AP.PlanRenderer = (function() {
         var sourceClass = a.source === 'custom' ? 'source-custom' : 'source-plan';
         html += '<td><span class="action-source-badge ' + sourceClass + '">' + (sourceLabels[a.source] || a.source) + '</span></td>';
 
-        // Delete (custom only)
-        html += '<td>';
-        if (a.source === 'custom') html += '<button class="btn-icon action-delete-btn" data-action-id="' + a.id + '" title="Delete">&times;</button>';
-        html += '</td>';
+        // Delete — allow removing any action (pre-populated or custom).
+        html += '<td><button class="btn-icon action-delete-btn" data-action-id="' + a.id + '" title="Delete">&times;</button></td>';
 
         html += '</tr>';
       });
