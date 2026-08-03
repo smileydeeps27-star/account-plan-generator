@@ -290,6 +290,113 @@
   flex-wrap: wrap;
 }
 
+/* ===== URAL Kit Skill Layout ===== */
+.priority-oneliner {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  border-left: 2px solid var(--accent-blue);
+  padding-left: 10px;
+}
+
+.ural-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.ural-box {
+  border-radius: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ural-box-understand { border-top: 3px solid #38bdf8; }
+.ural-box-recommend  { border-top: 3px solid #a78bfa; }
+.ural-box-act        { border-top: 3px solid #f97316; }
+.ural-box-learn      { border-top: 3px solid #34d399; }
+
+.ural-box-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.ural-box-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+}
+
+.ural-box-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.ural-box-body { font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+.ural-box-empty { font-style: italic; color: var(--text-muted); font-size: 11px; }
+
+.ural-field { margin-bottom: 8px; }
+.ural-field:last-child { margin-bottom: 0; }
+.ural-field-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.ural-field-value { display: inline; }
+.ural-field-list {
+  margin: 4px 0 0 0;
+  padding-left: 18px;
+  list-style: disc;
+}
+.ural-field-list li { margin-bottom: 3px; }
+
+.ural-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  margin: 12px 0;
+  font-size: 12px;
+}
+
+.priority-meta-item { display: flex; flex-direction: column; gap: 3px; }
+.priority-meta-kpis { flex: 1 1 100%; }
+.priority-meta-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+}
+.priority-meta-value { color: var(--text-secondary); font-size: 12px; }
+
+.kpi-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 2px 4px 2px 0;
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.kpi-chip em { font-style: normal; color: var(--text-secondary); font-weight: 400; }
+
+@media (max-width: 900px) {
+  .ural-grid { grid-template-columns: 1fr; }
+}
+
 /* ===== Stakeholder Table Extras ===== */
 .role-badge {
   display: inline-block;

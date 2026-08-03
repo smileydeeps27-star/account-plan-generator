@@ -248,16 +248,17 @@ AP.PlanRenderer = (function() {
     return html;
   }
 
-  // ===== MODULE 4: DI Priorities =====
+  // ===== MODULE 4: DI Priorities (URAL Kit Skills) =====
   function renderPriorities(plan) {
     var html = '<div id="panel-priorities" class="plan-panel">';
-    html += '<h3 class="section-title">Decision Intelligence Priorities</h3>';
+    html += '<h3 class="section-title">Decision Intelligence Use Cases</h3>';
+    html += '<p class="text-muted" style="margin-bottom: 16px;">Each use case follows the URAL framework — Understand, Recommend, Act, Learn — so a CP can walk through what Aera monitors, what it recommends, what it executes, and how it improves.</p>';
 
     if (!plan.diPriorities || plan.diPriorities.length === 0) {
       html += '<p class="text-muted">No priorities generated.</p>';
     } else {
       plan.diPriorities.forEach(function(p, i) {
-        html += '<div class="priority-card">';
+        html += '<div class="priority-card ural-card">';
         html += '<div class="priority-rank' + (i === 0 ? ' top' : '') + '">' + (p.rank || (i + 1)) + '</div>';
         html += '<div class="priority-header">';
         html += '<div class="priority-area">' + e(p.area) + '</div>';
@@ -266,14 +267,82 @@ AP.PlanRenderer = (function() {
           html += '<span class="badge ' + urgencyClass + '">' + e(p.urgency) + '</span>';
         }
         html += '</div>';
+
+        if (p.oneSentence) html += '<div class="priority-section priority-oneliner"><em>' + e(p.oneSentence) + '</em></div>';
         if (p.context) html += '<div class="priority-section"><div class="priority-section-label">Context</div><div class="priority-section-text">' + e(p.context) + '</div></div>';
         if (p.sellerValueProp) html += '<div class="priority-section"><div class="priority-section-label">Value Proposition</div><div class="priority-section-text">' + e(p.sellerValueProp) + '</div></div>';
+
+        // URAL 4-box grid — only render if we have URAL data on this priority
+        var hasURAL = p.understand || p.recommend || p.act || p.learn;
+        if (hasURAL) {
+          html += '<div class="ural-grid">';
+          html += renderURALBox('Understand', 'What Aera monitors to detect a decision opportunity', p.understand, [
+            { field: 'sourceSystems', label: 'Sources', list: true },
+            { field: 'monitoringFrequency', label: 'Frequency' },
+            { field: 'triggers', label: 'Triggers', list: true }
+          ]);
+          html += renderURALBox('Recommend', 'The decision Aera surfaces', p.recommend, [
+            { field: 'recommendation', label: 'Recommendation' },
+            { field: 'targetRole', label: 'Target Role' },
+            { field: 'interface', label: 'Interface' },
+            { field: 'decisionFactors', label: 'Confidence Signals', list: true }
+          ]);
+          html += renderURALBox('Act', 'What Aera executes in the system of record', p.act, [
+            { field: 'systemAction', label: 'System Action' },
+            { field: 'executionMode', label: 'Execution Mode' },
+            { field: 'guardrails', label: 'Guardrails', list: true }
+          ]);
+          html += renderURALBox('Learn', 'How the skill improves over time', p.learn, [
+            { field: 'overrideCapture', label: 'Override Capture' },
+            { field: 'outcomeTracking', label: 'Outcome Tracking' },
+            { field: 'modelUpdate', label: 'Model / Policy Update' }
+          ]);
+          html += '</div>';
+        }
+
+        // Cadence + KPIs + Pilot exit criteria
+        var footerParts = [];
+        if (p.cadence) footerParts.push('<div class="priority-meta-item"><span class="priority-meta-label">Cadence</span><span class="priority-meta-value">' + e(p.cadence) + '</span></div>');
+        if (p.kpisImpacted && p.kpisImpacted.length) {
+          var kpiChips = p.kpisImpacted.map(function(k) {
+            var arrow = (k.direction || '').toLowerCase() === 'up' ? '↑' : ((k.direction || '').toLowerCase() === 'down' ? '↓' : '');
+            return '<span class="kpi-chip">' + e(k.kpi) + ' ' + arrow + (k.targetLift ? ' <em>' + e(k.targetLift) + '</em>' : '') + '</span>';
+          }).join('');
+          footerParts.push('<div class="priority-meta-item priority-meta-kpis"><span class="priority-meta-label">KPIs</span><span class="priority-meta-value">' + kpiChips + '</span></div>');
+        }
+        if (p.pilotExitCriteria) footerParts.push('<div class="priority-meta-item"><span class="priority-meta-label">Pilot Exit Criteria</span><span class="priority-meta-value">' + e(p.pilotExitCriteria) + '</span></div>');
+        if (footerParts.length) html += '<div class="ural-meta">' + footerParts.join('') + '</div>';
+
         if (p.estimatedImpact) html += '<div class="priority-footer"><span class="badge badge-green">Impact: ' + e(p.estimatedImpact) + '</span></div>';
         html += '</div>';
       });
     }
     html += '</div>';
     return html;
+  }
+
+  // Render one URAL box (Understand / Recommend / Act / Learn)
+  function renderURALBox(title, subtitle, data, fields) {
+    var box = '<div class="ural-box ural-box-' + title.toLowerCase() + '">';
+    box += '<div class="ural-box-header"><span class="ural-box-title">' + title + '</span><span class="ural-box-subtitle">' + subtitle + '</span></div>';
+    box += '<div class="ural-box-body">';
+    if (!data) {
+      box += '<div class="ural-box-empty">Not populated</div>';
+    } else {
+      fields.forEach(function(f) {
+        var val = data[f.field];
+        if (!val || (Array.isArray(val) && !val.length)) return;
+        box += '<div class="ural-field"><span class="ural-field-label">' + f.label + ':</span> ';
+        if (f.list && Array.isArray(val)) {
+          box += '<ul class="ural-field-list">' + val.map(function(v) { return '<li>' + e(v) + '</li>'; }).join('') + '</ul>';
+        } else {
+          box += '<span class="ural-field-value">' + e(val) + '</span>';
+        }
+        box += '</div>';
+      });
+    }
+    box += '</div></div>';
+    return box;
   }
 
   // ===== MODULE 5: Stakeholders (Enhanced with quotes) =====
