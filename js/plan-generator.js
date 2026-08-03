@@ -267,7 +267,12 @@ AP.PlanGenerator = (function() {
     AP.EventBus.emit('plan:progress', { current: 1, total: TOTAL_STEPS, phase: 'Researching ' + companyName + '...' });
 
     var call1Msg = 'Build a deeply researched account profile for:\n\n' + companyCtx +
-      '\nSearch the web for the latest information about this company. Use real, current data.\n\n' +
+      '\nSearch the web for the latest information about this company. Prioritise sources from the last 24 months. Prefer: investor relations, SEC/annual filings, most recent earnings release and transcript, official company newsroom, and reputable business media.\n\n' +
+      'ANTI-HALLUCINATION RULES:\n' +
+      '- Every material fact (revenue, growth rate, business group split, strategic priority) needs a source URL and publication date.\n' +
+      '- If a specific number is not publicly disclosed, write "Not found (public)" for that field or label your estimate [ESTIMATED] with your reasoning.\n' +
+      '- Never invent quarter results, executive quotes, or M&A activity. If unsure, use "Not found (public)".\n' +
+      '- News items must be verifiable — no synthesized "trend" headlines.\n\n' +
       'Return JSON:\n' +
       '{\n' +
       '  "overview": {\n' +
@@ -277,18 +282,18 @@ AP.PlanGenerator = (function() {
       '    "employeeCount": "Approximate headcount",\n' +
       '    "ticker": "Stock ticker(s) if public, or Private",\n' +
       '    "website": "company domain",\n' +
-      '    "businessGroups": [{"name": "Division name", "description": "What it does", "revenueShare": "% of total"}],\n' +
+      '    "businessGroups": [{"name": "Division name", "description": "What it does", "revenueShare": "% of total", "confidence": "Confirmed|Estimated"}],\n' +
       '    "financialSnapshot": [\n' +
-      '      {"metric": "Revenue", "currentYear": "FY value", "priorYear": "FY value", "notes": "Growth rate"},\n' +
-      '      {"metric": "Operating Profit", "currentYear": "value", "priorYear": "value", "notes": "Trend"}\n' +
+      '      {"metric": "Revenue", "currentYear": "FY value", "priorYear": "FY value", "notes": "Growth rate", "sourceDate": "Mon YYYY"},\n' +
+      '      {"metric": "Operating Profit", "currentYear": "value", "priorYear": "value", "notes": "Trend", "sourceDate": "Mon YYYY"}\n' +
       '    ],\n' +
-      '    "strategicPriorities": ["Priority 1 — brief description", "Priority 2"]\n' +
+      '    "strategicPriorities": ["Priority 1 — brief description with source signal (e.g., cited in FY25 annual report)", "Priority 2"]\n' +
       '  },\n' +
       '  "news": [\n' +
-      '    {"date": "Mon YYYY", "headline": "Specific headline", "detail": "2-3 sentences", "source": "Publication", "relevanceTag": "Supply Chain|AI/Digital|Leadership|M&A|Financial|Strategy"}\n' +
+      '    {"date": "Mon YYYY", "headline": "Specific headline", "detail": "2-3 sentences", "source": "Publication", "sourceUrl": "URL if available", "relevanceTag": "Supply Chain|AI/Digital|Leadership|M&A|Financial|Strategy", "confidence": "Confirmed|Reported"}\n' +
       '  ]\n' +
       '}\n\n' +
-      'CRITICAL: Use REAL data. Include 5-7 news items, 4-6 financial rows, real business groups, specific strategic priorities.';
+      'CRITICAL: Use REAL data. Include 5-7 news items from the last 24 months. Include 4-6 financial rows from the most recent full-year/interim results. Business groups and strategic priorities must come from disclosed company materials — do not invent divisions.';
 
     try {
       var r1 = await groundedCall(systemBase, call1Msg, 16384, 'overview');
@@ -308,29 +313,53 @@ AP.PlanGenerator = (function() {
     // ===== CALL 2: Technology Landscape (grounded) =====
     AP.EventBus.emit('plan:progress', { current: 2, total: TOTAL_STEPS, phase: 'Researching technology stack...' });
 
-    var call2Msg = 'Research the technology stack and digital landscape of:\n\n' + companyCtx + overviewContext + '\n\n' +
-      'Search for this company as a CUSTOMER of technology vendors. Look for:\n' +
-      '- ERP systems (SAP, Oracle, Microsoft Dynamics, etc.) — check vendor customer pages, case studies, press releases\n' +
-      '- Supply chain / planning tools (Blue Yonder, Kinaxis, o9, SAP IBP, etc.)\n' +
-      '- Cloud platform (AWS, Azure, GCP)\n' +
-      '- CRM (Salesforce, etc.)\n' +
-      '- AI/ML investments and digital transformation initiatives\n' +
-      '- Any publicly known technology partnerships or implementations\n\n' +
+    var call2Msg = 'Research the enterprise technology stack of:\n\n' + companyCtx + overviewContext + '\n\n' +
+      'Objective: map their end-to-end tech stack across five layers, then for each identified system explain where ' + sellerName + ' Decision Intelligence sits relative to it. This is pre-sales tech intelligence for an enterprise sales team.\n\n' +
+      'SEARCH SOURCES (in this order of reliability):\n' +
+      '1. Company investor relations, annual report, most recent earnings transcript, capital markets day materials\n' +
+      '2. LinkedIn profiles of planning, IT, engineering, and finance staff at the company — technology tool references are gold\n' +
+      '3. Current and archived job postings on LinkedIn/Indeed/company careers portal — extract every named system in requirements\n' +
+      '4. Technology vendor customer case study libraries (SAP, Oracle, Kinaxis, Blue Yonder, o9, Manhattan, Aveva, Honeywell, etc.)\n' +
+      '5. System integrator project portfolios: Accenture, Deloitte, Capgemini, IBM Consulting, Infosys, TCS\n' +
+      '6. Industry conference presentations and speaker abstracts\n\n' +
+      'FIVE LAYERS TO MAP:\n' +
+      '- Layer 1 — OT & Site Automation: DCS/SCADA, historians, safety systems (Honeywell, Emerson, Rockwell, Siemens, Aveva PI)\n' +
+      '- Layer 2 — MES & Quality: MES, LIMS, batch/order management, compliance tools\n' +
+      '- Layer 3 — Planning & Scheduling: ERP planning modules, APS (Kinaxis/o9/Blue Yonder/SAP IBP/Aspen/OMP), S&OP/IBP tooling\n' +
+      '- Layer 4 — Logistics & Execution: TMS by mode (Oracle TMS/SAP TM/Manhattan/Descartes/E2open/project44), WMS, order management\n' +
+      '- Layer 5 — Analytics & Decision Support: BI (Power BI/Tableau/Qlik), financial consolidation (Anaplan/OneStream/SAP BPC), data lake\n\n' +
+      'ANTI-HALLUCINATION RULES:\n' +
+      '- Only report systems with observable evidence (case study, LinkedIn mention, job posting, press release). Cite the source in "evidence".\n' +
+      '- Never assume a vendor relationship from industry norm alone — that must be marked confidence: "Inferred".\n' +
+      '- If you cannot find a system for a layer, return {"category": "<Layer>", "vendor": "Not found (public)", "confidence": "Unknown"} rather than inventing.\n\n' +
       'Return JSON:\n' +
       '{\n' +
       '  "technologyLandscape": {\n' +
       '    "knownSystems": [\n' +
-      '      {"category": "ERP|Planning|CRM|Cloud|Analytics|AI/ML|Other", "vendor": "Vendor Name", "product": "Specific product if known", "evidence": "Where this was found — be specific", "confidence": "Confirmed|Likely|Rumored"}\n' +
+      '      {\n' +
+      '        "layer": "OT|MES|Planning|Logistics|Analytics",\n' +
+      '        "category": "ERP|APS|TMS|WMS|BI|Data Lake|MES|SCADA|CRM|Cloud|AI/ML|Other",\n' +
+      '        "vendor": "Vendor Name",\n' +
+      '        "product": "Specific product/version if known",\n' +
+      '        "evidence": "Specific source snippet (e.g., \\"cited in SAP case study, Mar 2024\\" or \\"listed in Supply Chain Manager LinkedIn profile\\")",\n' +
+      '        "confidence": "Confirmed|Likely|Inferred|Unknown",\n' +
+      '        "aeraPosition": "1 SHORT SENTENCE: where ' + sellerName + ' sits relative to this system (upstream/downstream/complementary layer)",\n' +
+      '        "dataInputs": "What Aera would READ from this system (e.g., \\"open orders, inventory positions, MRP output\\")",\n' +
+      '        "dataOutputs": "What Aera would WRITE BACK (e.g., \\"safety-stock updates, expedite POs, transfer orders\\")",\n' +
+      '        "likelyObjection": "1 SENTENCE: internal objection this system\'s owner will raise (e.g., \\"we already have this in SAP IBP\\")",\n' +
+      '        "objectionOwner": "Role that owns the objection (e.g., \\"S&OP Manager\\", \\"CIO\\", \\"Planning Lead\\")"\n' +
+      '      }\n' +
       '    ],\n' +
-      '    "digitalStrategy": "3-4 sentences about their digital transformation strategy and AI investments",\n' +
-      '    "itLeadership": "Key CIO/CTO/CDO if findable",\n' +
-      '    "techBudget": "Any known IT spending data"\n' +
+      '    "digitalStrategy": "3-4 sentences about their digital transformation strategy and AI investments, with source references",\n' +
+      '    "itLeadership": "Key CIO/CTO/CDO name + title + evidence source",\n' +
+      '    "techBudget": "Any known IT spending data with source, or Not found (public)",\n' +
+      '    "layerGaps": ["Layers where no system was identified — likely manual/spreadsheet processes"]\n' +
       '  }\n' +
       '}\n\n' +
-      'CRITICAL: Only report systems you find EVIDENCE for. Mark confidence level honestly. Do NOT guess or hallucinate vendor relationships.';
+      'CRITICAL: Prioritise depth on Layers 3 (Planning) and 4 (Logistics) — these are where ' + sellerName + ' has highest displacement/complement value. Include 6-12 systems total across all layers.';
 
     try {
-      var r2 = await groundedCall(systemBase, call2Msg, 4096, 'tech');
+      var r2 = await groundedCall(systemBase, call2Msg, 8192, 'tech');
       if (r2.data) {
         plan.technologyLandscape = r2.data.technologyLandscape || null;
         if (r2.sources.length) plan._sources = plan._sources.concat(r2.sources);
@@ -347,21 +376,54 @@ AP.PlanGenerator = (function() {
     // ===== CALL 3: DI Priorities (jsonMode) =====
     AP.EventBus.emit('plan:progress', { current: 3, total: TOTAL_STEPS, phase: 'Analyzing decision intelligence opportunities...' });
 
-    var call3Msg = 'Analyze decision intelligence opportunities for:\n\n' + companyCtx +
+    var call3Msg = 'Design 5 Decision Intelligence use cases for ' + sellerName + ' at:\n\n' + companyCtx +
       overviewContext + techContext + newsContext + userCtx +
-      '\n\nReturn JSON:\n' +
+      '\n\nEach use case must be a fully structured "Kit Skill" using the URAL framework: Understand → Recommend → Act → Learn. This is what a CP will use verbatim in an executive briefing, so make it concrete and specific.\n\n' +
+      'URAL structure (mandatory — 2-3 substantive bullets per box, never empty):\n' +
+      '- UNDERSTAND: what data/signals Aera monitors to detect a decision opportunity (source systems from the tech stack, monitoring frequency, trigger conditions)\n' +
+      '- RECOMMEND: the specific decision Aera surfaces (concrete recommendation, target role/interface, key decision factors and confidence signals)\n' +
+      '- ACT: what Aera executes in the system of record (specific system action, execution mode: autonomous-with-guardrails / human-in-loop / recommend-only, guardrail conditions)\n' +
+      '- LEARN: how Aera improves the skill over time (override capture, outcome tracking, model/policy update mechanism)\n\n' +
+      'Return JSON:\n' +
       '{\n' +
       '  "diPriorities": [\n' +
       '    {\n' +
       '      "rank": 1,\n' +
-      '      "area": "Priority area name (e.g., Supply Chain Decision Intelligence)",\n' +
-      '      "context": "3-4 SENTENCES about THIS company\'s specific situation and why this is a priority. Reference their actual operations and scale.",\n' +
-      '      "sellerValueProp": "2-3 SENTENCES about how ' + sellerName + ' addresses this. Reference specific Aera Skills/capabilities.",\n' +
-      '      "estimatedImpact": "Dollar or percentage estimate scaled to this company\'s revenue",\n' +
+      '      "area": "Use Case Name (e.g., Autonomous Expedite Decisioning for At-Risk Inventory)",\n' +
+      '      "oneSentence": "1 SENTENCE plain-language description of what the skill does and where it runs",\n' +
+      '      "context": "3-4 SENTENCES about why THIS company needs this — reference their actual operations, scale, and pain points",\n' +
+      '      "sellerValueProp": "2-3 SENTENCES: how ' + sellerName + ' addresses it. Reference specific Aera Skills/capabilities.",\n' +
+      '      "understand": {\n' +
+      '        "sourceSystems": ["ERP module (name from tech stack)", "APS", "Supplier portal"],\n' +
+      '        "monitoringFrequency": "Real-time|Hourly|Daily",\n' +
+      '        "triggers": ["Stockout risk > 80% in next 5 days", "Supplier late-ship signal", "Demand spike > forecast + 2σ"]\n' +
+      '      },\n' +
+      '      "recommend": {\n' +
+      '        "recommendation": "The specific decision Aera surfaces (e.g., \\"expedite PO #XXXX by 3 days; estimated stockout risk 87% by Thursday\\")",\n' +
+      '        "targetRole": "Who receives it (e.g., Demand Planner, S&OP Manager)",\n' +
+      '        "interface": "Aera cockpit | Email alert | ERP workflow | Teams/Slack",\n' +
+      '        "decisionFactors": ["Confidence signals shown to user, e.g., forecast accuracy 85%, supplier OTIF 92%"]\n' +
+      '      },\n' +
+      '      "act": {\n' +
+      '        "systemAction": "The specific write-back action (e.g., \\"Create expedite PO in SAP\\", \\"Release STO\\", \\"Update safety-stock parameter in APS\\")",\n' +
+      '        "executionMode": "Autonomous (with guardrails)|Human-in-the-loop|Recommend only",\n' +
+      '        "guardrails": ["Value threshold (e.g., PO < $500K)", "Policy rule (must match approved supplier list)", "Escalation trigger (e.g., override logging + supervisor notify)"]\n' +
+      '      },\n' +
+      '      "learn": {\n' +
+      '        "overrideCapture": "What happens when a user rejects/modifies (e.g., \\"reason captured, feature-weighted into next retrain\\")",\n' +
+      '        "outcomeTracking": "How Aera measures impact (e.g., \\"actual vs recommended stockout avoidance, freight-cost delta\\")",\n' +
+      '        "modelUpdate": "What gets retrained and at what cadence (e.g., \\"policy re-weight weekly, model retrain monthly\\")"\n' +
+      '      },\n' +
+      '      "cadence": "Real-time|Hourly|Daily|Weekly",\n' +
+      '      "kpisImpacted": [\n' +
+      '        {"kpi": "OTIF|Fill rate|Freight premium|Inventory turns|Forecast accuracy|Expedite cost %", "direction": "Up|Down", "targetLift": "e.g., +2-4pp OTIF, -15% expedite cost"}\n' +
+      '      ],\n' +
+      '      "pilotExitCriteria": "Adoption %, decision cycle-time reduction, KPI lift, automation rate, controls met — what \\"good\\" looks like at pilot close",\n' +
+      '      "estimatedImpact": "$ or % estimate scaled to this company\'s revenue with basis (e.g., \\"$8-12M/yr = 0.05% of $22B revenue based on typical CPG expedite-cost reduction\\")",\n' +
       '      "urgency": "HIGHEST|High|Medium"\n' +
       '    }\n' +
       '  ]\n' +
-      '}\n\nGenerate 5 DI priorities ranked by importance. Each must be specific to this company, not generic.';
+      '}\n\nGenerate 5 use cases ranked by relevance. Each MUST have every URAL box filled with 2-3 substantive bullets — never leave any box empty. Ground the source systems in the tech stack you already researched (Layer 3/4/5). Keep language executive-ready but concrete.';
 
     try {
       var r3 = await AP.ApiClient.call(systemBase, call3Msg, { maxTokens: 8192, jsonMode: true });
@@ -374,38 +436,51 @@ AP.PlanGenerator = (function() {
 
     var topPriorities = plan.diPriorities.slice(0, 3).map(function(p) { return p.area; }).join('; ');
 
-    var call4Msg = 'Research and identify REAL executives and leaders at:\n\n' + companyCtx + overviewContext +
+    var call4Msg = 'Research REAL executives and leaders at:\n\n' + companyCtx + overviewContext +
       '\nTop DI Priorities: ' + topPriorities + '\n' + userCtx +
-      '\nSearch the web for ACTUAL people at this company. Look for:\n' +
-      '- C-suite executives (CEO, CFO, COO, CIO, CTO, CSCO)\n' +
-      '- Chief Digital Officer (CDO), Chief AI Officer (CAIO), Chief Data Officer, Chief Analytics Officer, Chief Transformation Officer — these new AI/digital leadership roles are increasingly common and highly relevant\n' +
-      '- VP/SVP of Supply Chain, Operations, Digital, IT, Procurement, Finance, AI, Data Science, Digital Transformation\n' +
-      '- Any recent leadership changes or appointments, especially new AI/digital roles\n' +
-      '- Direct quotes from earnings calls, interviews, conferences, press releases\n' +
-      '- LinkedIn profiles or public appearances\n\n' +
+      '\nOBJECTIVE: build a longlist of decision-makers, influencers, and transformation sponsors ' + sellerName + ' should engage. Prioritise people with visible remit for supply chain, planning, digital, or AI initiatives.\n\n' +
+      'SEARCH SOURCES (in this order):\n' +
+      '1. Company leadership/executive bios, IR investor day speaker lineups\n' +
+      '2. Recent earnings-call speaker attributions and Q&A responses\n' +
+      '3. Press releases announcing appointments or organisational changes (last 24 months)\n' +
+      '4. LinkedIn profiles with visible title + employer + tenure\n' +
+      '5. Industry conference speaker pages and podcast/interview coverage\n' +
+      '6. Awards, patents, published articles authored by the person\n\n' +
+      'TARGET FUNCTIONS (prioritise in this order):\n' +
+      '- Tier 1 (core decision-making): Chief Supply Chain Officer, VP/SVP Supply Chain, S&OP/IBP Lead, Demand Planning, Material Planning, Inventory, Logistics, Supply Chain Transformation\n' +
+      '- Tier 2 (technology & data): CIO, CDO, VP Data & Analytics, Head of AI, Digital Transformation lead\n' +
+      '- Tier 3 (execution & adjacent): Manufacturing/Plant Directors, CPO/Procurement, Continuous Improvement, Supply Chain Finance\n' +
+      '- Include no more than 2 C-suite executives — focus on Director/Senior Director/VP/SVP levels who actually run initiatives.\n\n' +
+      'EVIDENCE GATE (HARD RULE — every person must pass this):\n' +
+      '- ROLE PROOF: a source showing their title AND employer (and dates if available). Cite the URL and publication date.\n' +
+      '- RELEVANCE PROOF: a source showing transformation remit / AI-digital initiative / supply-chain-planning ownership. Cite URL and date.\n' +
+      '- DISAMBIGUATOR: at least one — location, business unit, distinctive prior employer, or middle initial. Prevents confusion with same-name others.\n' +
+      '- If EITHER proof is missing, EXCLUDE the person. Never invent names or "likely" titles.\n' +
+      '- If you cannot find a real person for a critical role, use: {"name": "Not found (public)", "title": "VP Supply Chain (target)", "confidence": "Unverified", "searchQueries": ["3-5 specific searches a human could run"]}\n\n' +
       'Return JSON:\n' +
       '{\n' +
       '  "stakeholders": [\n' +
       '    {\n' +
-      '      "name": "REAL Full Name — only include people you found in search results",\n' +
-      '      "title": "Their actual job title",\n' +
-      '      "roleInDeal": "Executive Sponsor|Champion|Evaluator|Influencer|Gatekeeper",\n' +
-      '      "relevance": "High|Medium",\n' +
+      '      "name": "REAL Full Name",\n' +
+      '      "title": "Their actual current job title",\n' +
+      '      "linkedinUrl": "LinkedIn profile URL if visible, else empty",\n' +
+      '      "location": "City/Country if public",\n' +
+      '      "functionTier": "Tier 1|Tier 2|Tier 3",\n' +
+      '      "roleInDeal": "Executive Sponsor|Champion|Evaluator|Influencer|Gatekeeper|Pain-bearer",\n' +
+      '      "relevance": "High|Medium|Low",\n' +
+      '      "confidence": "Confirmed|Inferred|Unverified",\n' +
+      '      "roleProof": {"claim": "What the source says about title/employer", "sourceUrl": "URL", "sourceDate": "Mon YYYY"},\n' +
+      '      "relevanceProof": {"claim": "What the source says about their transformation/AI/supply chain remit", "sourceUrl": "URL", "sourceDate": "Mon YYYY"},\n' +
+      '      "disambiguator": "Location + BU + prior employer or other distinguishing detail",\n' +
       '      "notes": "1 SENTENCE: why they matter for a ' + sellerName + ' deal",\n' +
       '      "engagementStrategy": "1-2 SHORT SENTENCES max 40 words: specific approach — what message and format (email/LinkedIn/exec briefing)",\n' +
       '      "publicQuotes": [\n' +
-      '        {"quote": "Direct quote or paraphrase from a real source", "source": "Where this was said — earnings call, interview, conference", "date": "When"}\n' +
-      '      ],\n' +
-      '      "confidence": "Verified|Likely"\n' +
+      '        {"quote": "Direct quote from a real source", "source": "Earnings call | interview | conference", "sourceUrl": "URL", "date": "Mon YYYY"}\n' +
+      '      ]\n' +
       '    }\n' +
       '  ]\n' +
       '}\n\n' +
-      'CRITICAL RULES:\n' +
-      '- ONLY include people you found in search results. Do NOT invent names.\n' +
-      '- If you cannot find a real person for a critical role, use: {"name": "Role to be identified", "title": "VP Supply Chain (target)", "confidence": "Unverified"}\n' +
-      '- Include real quotes where available. If no quote found, omit the publicQuotes array for that person.\n' +
-      '- Engagement strategy must be SPECIFIC: reference their actual background, quotes, and specific Aera capabilities.\n' +
-      '- Target 5-8 stakeholders.';
+      'Target 6-10 stakeholders across the three tiers. Prioritise Tier 1 (at least 4). Never bypass the Evidence Gate — better to return 5 verified names than 10 half-verified ones.';
 
     try {
       var r4 = await groundedCall(systemBase, call4Msg, 12288, 'stakeholders');
