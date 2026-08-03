@@ -250,6 +250,7 @@ AP.PlanGenerator = (function() {
       nextFiveSteps: [],
       risks: [],
       successMetrics: [],
+      valueChain: null,
       _sources: []
     };
 
@@ -261,7 +262,14 @@ AP.PlanGenerator = (function() {
 
     var systemBase = 'You are a world-class B2B enterprise sales strategist at ' + sellerName + '. You have deep knowledge of every major company. Your job is to build account plans that are so insightful they could be presented to a Chief Revenue Officer.\n\nBe specific, not generic. Reference real business context, actual initiatives, and concrete data.\n\nReturn ONLY valid JSON — no markdown fences, no explanation outside the JSON.' + sellerCtx;
 
-    var TOTAL_STEPS = 7;
+    var TOTAL_STEPS = 8;
+
+    // Value Chain analysis is expensive and only relevant to physical-product industries.
+    // Skip for pure services / SaaS / financial services etc.
+    var industryStr = (industryHint || '').toLowerCase();
+    var valueChainRelevant = /manuf|cpg|fmcg|automotive|industrial|chemical|pharma|energy|oil|gas|mining|retail|distribution|logistics|3pl|food|beverage|aerospace/.test(industryStr);
+    // When industry hint is empty, still run it — the AI will decide relevance based on the company.
+    if (!industryStr) valueChainRelevant = true;
 
     // ===== CALL 1: Account Overview + News (grounded) =====
     AP.EventBus.emit('plan:progress', { current: 1, total: TOTAL_STEPS, phase: 'Researching ' + companyName + '...' });
@@ -663,6 +671,99 @@ AP.PlanGenerator = (function() {
         plan.successMetrics = p7.successMetrics || [];
       }
     } catch (err) { console.error('[PlanGen] Call 7 error:', err.message); }
+
+    // ===== CALL 8: Value Chain Analysis (grounded, industry-gated) =====
+    if (valueChainRelevant) {
+      AP.EventBus.emit('plan:progress', { current: 8, total: TOTAL_STEPS, phase: 'Mapping value chain & operational footprint...' });
+
+      var call8Msg = 'Build a condensed value chain map for:\n\n' + companyCtx + overviewContext + techContext +
+        '\n\nObjective: map the company\'s end-to-end supply chain so a ' + sellerName + ' CP can identify hot-spots where Decision Intelligence would land. Prioritise recent information (last 24-36 months). Where data is unavailable or estimated, say so explicitly with [ESTIMATED] or [INFERRED] labels.\n\n' +
+        'SEARCH SOURCES:\n' +
+        '- Company annual report, 10-K/20-F filings, capital markets day materials\n' +
+        '- Most recent earnings release and transcript\n' +
+        '- Company sustainability/ESG report and supplier disclosures\n' +
+        '- Trade press for the industry (Supply Chain Dive, Automotive News, Food Dive, ChemWeek, etc.)\n' +
+        '- Vendor case studies referencing this company as a customer\n\n' +
+        'COVER THESE 8 SECTIONS (each brief but concrete):\n' +
+        '1. Raw materials & commodity inputs — top spend categories, commodity exposure, PPV sensitivity\n' +
+        '2. Supplier base & tier structure — named tier-1 suppliers, sole vs dual sourcing, geographic concentration, concentration risk\n' +
+        '3. Procurement structure — centralised vs regional vs category-based, CPO name/priorities, digital procurement stack\n' +
+        '4. BOM & parts complexity — estimated SKU count, variant drivers, ECN synchronization risks (if manufacturing)\n' +
+        '5. Manufacturing & assembly — top sites (location + products), S&OP process, publicly disclosed KPIs (OEE, build attainment)\n' +
+        '6. Inbound logistics — model (milk run/direct/consolidation), key 3PLs, mode mix (JIT/JIS), expedite/air freight exposure\n' +
+        '7. Outbound logistics & distribution — DC footprint, top export markets, channel structure, channel inventory status\n' +
+        '8. Market & customer structure — top markets by revenue, mix shift, retail vs fleet vs OEM breakdown\n\n' +
+        'Then, based on this value chain map, identify 3-5 Aera hot-spots — specific points in the value chain where ' + sellerName + '\'s Decision Intelligence would deliver the highest impact for this account.\n\n' +
+        'Return JSON:\n' +
+        '{\n' +
+        '  "valueChain": {\n' +
+        '    "rawMaterials": {\n' +
+        '      "primaryMaterials": [{"category": "e.g., Steel grades", "spendShare": "%", "confidence": "Confirmed|Estimated|Inferred"}],\n' +
+        '      "commodityExposure": "1-2 sentences on hedging strategy and PPV exposure",\n' +
+        '      "keyRisks": "1 sentence on rules-of-origin / CBAM / conflict minerals if relevant"\n' +
+        '    },\n' +
+        '    "supplierBase": {\n' +
+        '      "tier1Suppliers": [{"category": "Powertrain|Packaging|Ingredients|...", "supplier": "Vendor Name", "scope": "Sole-sourced|Dual-sourced|Multi-sourced", "confidence": "Confirmed|Inferred"}],\n' +
+        '      "geographicConcentration": "1 sentence on regional distribution",\n' +
+        '      "concentrationRisk": "1 sentence on the biggest single-point exposure",\n' +
+        '      "digitalStack": "SAP Ariba / Coupa / E2open / etc. if known"\n' +
+        '    },\n' +
+        '    "procurement": {\n' +
+        '      "structure": "Centralised|Regional|Category-based",\n' +
+        '      "cpoName": "Name + title if publicly identified, else Not found (public)",\n' +
+        '      "cpoPriorities": ["Current CPO priority 1", "Priority 2"],\n' +
+        '      "spendMix": "1 sentence on direct vs indirect spend split if known"\n' +
+        '    },\n' +
+        '    "bomComplexity": {\n' +
+        '      "estimatedSkuCount": "Approximate active SKUs (with [ESTIMATED] label if not disclosed)",\n' +
+        '      "variantDrivers": "1-2 sentences on regional compliance, channel differences, platform generations",\n' +
+        '      "ecnRisk": "1 sentence on engineering change synchronization risks — only include if manufacturing/discrete industry"\n' +
+        '    },\n' +
+        '    "manufacturing": {\n' +
+        '      "sites": [{"location": "City, Country", "products": "Product lines produced", "capacity": "Volume/throughput if known", "confidence": "Confirmed|Inferred"}],\n' +
+        '      "sopProcess": "1-2 sentences on S&OP or IBP maturity — mention any reliance on manual/Excel processes if flagged",\n' +
+        '      "publicKpis": ["Any disclosed operational KPI e.g., OEE X%, on-time build Y%"]\n' +
+        '    },\n' +
+        '    "inboundLogistics": {\n' +
+        '      "model": "1 sentence on inbound model by region",\n' +
+        '      "keyPartners": ["3PL / freight forwarder names"],\n' +
+        '      "modeMix": "1 sentence on JIT / JIS / kanban usage",\n' +
+        '      "expediteExposure": "1 sentence on air-freight or expedite exposure with cost signal if known"\n' +
+        '    },\n' +
+        '    "outboundLogistics": {\n' +
+        '      "distributionModel": "1-2 sentences on plant-to-customer/dealer model",\n' +
+        '      "dcFootprint": "1 sentence on DC count and regional coverage",\n' +
+        '      "topExportMarkets": ["Top 5 export markets by volume/revenue"],\n' +
+        '      "channelInventoryStatus": "1 sentence on any known destocking or correction cycle"\n' +
+        '    },\n' +
+        '    "marketStructure": {\n' +
+        '      "topMarkets": [{"region": "Region/country", "revenueShare": "%", "trend": "Growing|Correcting|Stable"}],\n' +
+        '      "mixShift": "1-2 sentences on premium vs standard, legacy vs next-gen shifts",\n' +
+        '      "customerMix": "1 sentence on retail/fleet/OEM/government split"\n' +
+        '    },\n' +
+        '    "aeraHotSpots": [\n' +
+        '      {\n' +
+        '        "location": "Where in the value chain (e.g., \\"Tier-1 supplier collaboration\\", \\"Inbound expedite decisioning\\", \\"Channel inventory rebalancing\\")",\n' +
+        '        "pain": "1 sentence on the specific execution gap or manual process at this hot-spot",\n' +
+        '        "aeraPlay": "1-2 sentences on the Aera Skill that would address it and the systems it would integrate with",\n' +
+        '        "estimatedImpact": "$ or % estimate scaled to this company"\n' +
+        '      }\n' +
+        '    ]\n' +
+        '  }\n' +
+        '}\n\n' +
+        'CRITICAL:\n' +
+        '- Focus on sections most relevant to THIS industry — e.g., BOM complexity matters more for automotive/electronics than food/beverage; commodity exposure matters more for chemicals/manufacturing than pure logistics.\n' +
+        '- Never invent supplier names, site locations, or CPO names. Use "Not found (public)" if not verifiable.\n' +
+        '- Aera hot-spots must be tied to specific value-chain locations you identified, not generic supply-chain talk.';
+
+      try {
+        var r8 = await groundedCall(systemBase, call8Msg, 12288, 'valueChain');
+        if (r8.data) {
+          plan.valueChain = r8.data.valueChain || null;
+          if (r8.sources.length) plan._sources = plan._sources.concat(r8.sources);
+        }
+      } catch (err) { console.error('[PlanGen] Call 8 (value chain) error:', err.message); }
+    }
 
     // ===== Build numbered references and apply inline citations =====
     plan._references = buildReferences(plan._sources);

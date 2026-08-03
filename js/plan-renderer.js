@@ -41,6 +41,7 @@ AP.PlanRenderer = (function() {
       { id: 'overview', label: 'Overview' },
       { id: 'news', label: 'News' },
       { id: 'techlandscape', label: 'Tech Stack' },
+      { id: 'valuechain', label: 'Value Chain' },
       { id: 'priorities', label: 'DI Priorities' },
       { id: 'stakeholders', label: 'Stakeholders' },
       { id: 'competitive', label: 'Competitive' },
@@ -67,6 +68,7 @@ AP.PlanRenderer = (function() {
     html += renderOverview(plan);
     html += renderNews(plan);
     html += renderTechLandscape(plan);
+    html += renderValueChain(plan);
     html += renderPriorities(plan);
     html += renderStakeholders(plan);
     html += renderCompetitive(plan);
@@ -246,6 +248,164 @@ AP.PlanRenderer = (function() {
 
     html += '</div>';
     return html;
+  }
+
+  // ===== MODULE 3.5: Value Chain =====
+  function renderValueChain(plan) {
+    var vc = plan.valueChain || {};
+    var html = '<div id="panel-valuechain" class="plan-panel">';
+    html += '<h3 class="section-title">Value Chain & Operational Footprint</h3>';
+
+    if (!plan.valueChain) {
+      html += '<p class="text-muted">Value chain analysis not generated. This module runs for physical-product industries (manufacturing, CPG, retail, chemicals, energy, logistics, etc.). Regenerate with an appropriate industry hint to populate it.</p>';
+      html += '</div>';
+      return html;
+    }
+
+    // Flow band — 8 stages left-to-right
+    html += '<div class="vc-flow-band">';
+    ['Raw Materials', 'Suppliers', 'Procurement', 'BOM', 'Manufacturing', 'Inbound Logistics', 'Outbound Logistics', 'Markets'].forEach(function(stage, i) {
+      html += '<div class="vc-flow-stage"><span class="vc-flow-num">' + (i + 1) + '</span>' + stage + '</div>';
+    });
+    html += '</div>';
+
+    // Aera hot-spots overlay — surface these prominently before the details
+    if (vc.aeraHotSpots && vc.aeraHotSpots.length) {
+      html += '<div class="vc-hotspots">';
+      html += '<h4 class="vc-section-title">Aera Hot-Spots <span class="text-muted">— where Decision Intelligence lands hardest</span></h4>';
+      html += '<div class="vc-hotspots-grid">';
+      vc.aeraHotSpots.forEach(function(h) {
+        html += '<div class="vc-hotspot-card">';
+        html += '<div class="vc-hotspot-location">' + e(h.location) + '</div>';
+        if (h.pain) html += '<div class="vc-hotspot-pain"><span class="vc-field-label">Pain:</span> ' + e(h.pain) + '</div>';
+        if (h.aeraPlay) html += '<div class="vc-hotspot-play"><span class="vc-field-label">Aera Play:</span> ' + e(h.aeraPlay) + '</div>';
+        if (h.estimatedImpact) html += '<div class="vc-hotspot-impact"><span class="badge badge-green">' + e(h.estimatedImpact) + '</span></div>';
+        html += '</div>';
+      });
+      html += '</div></div>';
+    }
+
+    // Detailed sections — one card per stage
+    html += '<div class="vc-sections">';
+
+    html += renderVCSection('1. Raw Materials & Commodity Inputs', vc.rawMaterials, function(rm) {
+      var out = '';
+      if (rm.primaryMaterials && rm.primaryMaterials.length) {
+        out += '<div class="vc-field"><span class="vc-field-label">Primary materials:</span>';
+        out += '<table class="vc-mini-table"><thead><tr><th>Category</th><th>Spend</th><th>Confidence</th></tr></thead><tbody>';
+        rm.primaryMaterials.forEach(function(m) {
+          out += '<tr><td>' + e(m.category) + '</td><td>' + e(m.spendShare || '') + '</td><td>' + e(m.confidence || '') + '</td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      if (rm.commodityExposure) out += '<div class="vc-field"><span class="vc-field-label">Commodity exposure:</span> ' + e(rm.commodityExposure) + '</div>';
+      if (rm.keyRisks) out += '<div class="vc-field"><span class="vc-field-label">Regulatory/compliance:</span> ' + e(rm.keyRisks) + '</div>';
+      return out;
+    });
+
+    html += renderVCSection('2. Supplier Base & Tier Structure', vc.supplierBase, function(sb) {
+      var out = '';
+      if (sb.tier1Suppliers && sb.tier1Suppliers.length) {
+        out += '<div class="vc-field"><span class="vc-field-label">Tier-1 suppliers:</span>';
+        out += '<table class="vc-mini-table"><thead><tr><th>Category</th><th>Supplier</th><th>Scope</th><th>Confidence</th></tr></thead><tbody>';
+        sb.tier1Suppliers.forEach(function(s) {
+          out += '<tr><td>' + e(s.category) + '</td><td>' + e(s.supplier) + '</td><td>' + e(s.scope || '') + '</td><td>' + e(s.confidence || '') + '</td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      if (sb.geographicConcentration) out += '<div class="vc-field"><span class="vc-field-label">Geographic distribution:</span> ' + e(sb.geographicConcentration) + '</div>';
+      if (sb.concentrationRisk) out += '<div class="vc-field"><span class="vc-field-label">Concentration risk:</span> ' + e(sb.concentrationRisk) + '</div>';
+      if (sb.digitalStack) out += '<div class="vc-field"><span class="vc-field-label">Digital procurement stack:</span> ' + e(sb.digitalStack) + '</div>';
+      return out;
+    });
+
+    html += renderVCSection('3. Procurement Structure', vc.procurement, function(pr) {
+      var out = '';
+      if (pr.structure) out += '<div class="vc-field"><span class="vc-field-label">Structure:</span> ' + e(pr.structure) + '</div>';
+      if (pr.cpoName) out += '<div class="vc-field"><span class="vc-field-label">CPO:</span> ' + e(pr.cpoName) + '</div>';
+      if (pr.cpoPriorities && pr.cpoPriorities.length) {
+        out += '<div class="vc-field"><span class="vc-field-label">CPO priorities:</span><ul class="vc-list">';
+        pr.cpoPriorities.forEach(function(p) { out += '<li>' + e(p) + '</li>'; });
+        out += '</ul></div>';
+      }
+      if (pr.spendMix) out += '<div class="vc-field"><span class="vc-field-label">Spend mix:</span> ' + e(pr.spendMix) + '</div>';
+      return out;
+    });
+
+    html += renderVCSection('4. BOM & Parts Complexity', vc.bomComplexity, function(bom) {
+      var out = '';
+      if (bom.estimatedSkuCount) out += '<div class="vc-field"><span class="vc-field-label">SKU / part count:</span> ' + e(bom.estimatedSkuCount) + '</div>';
+      if (bom.variantDrivers) out += '<div class="vc-field"><span class="vc-field-label">Variant drivers:</span> ' + e(bom.variantDrivers) + '</div>';
+      if (bom.ecnRisk) out += '<div class="vc-field"><span class="vc-field-label">Engineering change (ECN) risk:</span> ' + e(bom.ecnRisk) + '</div>';
+      return out;
+    });
+
+    html += renderVCSection('5. Manufacturing & Assembly', vc.manufacturing, function(mfg) {
+      var out = '';
+      if (mfg.sites && mfg.sites.length) {
+        out += '<div class="vc-field"><span class="vc-field-label">Key sites:</span>';
+        out += '<table class="vc-mini-table"><thead><tr><th>Location</th><th>Products</th><th>Capacity</th><th>Confidence</th></tr></thead><tbody>';
+        mfg.sites.forEach(function(s) {
+          out += '<tr><td>' + e(s.location) + '</td><td>' + e(s.products || '') + '</td><td>' + e(s.capacity || '') + '</td><td>' + e(s.confidence || '') + '</td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      if (mfg.sopProcess) out += '<div class="vc-field"><span class="vc-field-label">S&OP process:</span> ' + e(mfg.sopProcess) + '</div>';
+      if (mfg.publicKpis && mfg.publicKpis.length) {
+        out += '<div class="vc-field"><span class="vc-field-label">Public KPIs:</span> ' + mfg.publicKpis.map(function(k) { return e(k); }).join(' • ') + '</div>';
+      }
+      return out;
+    });
+
+    html += renderVCSection('6. Inbound Logistics', vc.inboundLogistics, function(inb) {
+      var out = '';
+      if (inb.model) out += '<div class="vc-field"><span class="vc-field-label">Model:</span> ' + e(inb.model) + '</div>';
+      if (inb.keyPartners && inb.keyPartners.length) out += '<div class="vc-field"><span class="vc-field-label">Key partners:</span> ' + inb.keyPartners.map(function(p) { return e(p); }).join(', ') + '</div>';
+      if (inb.modeMix) out += '<div class="vc-field"><span class="vc-field-label">Mode mix:</span> ' + e(inb.modeMix) + '</div>';
+      if (inb.expediteExposure) out += '<div class="vc-field"><span class="vc-field-label">Expedite / air-freight exposure:</span> ' + e(inb.expediteExposure) + '</div>';
+      return out;
+    });
+
+    html += renderVCSection('7. Outbound Logistics & Distribution', vc.outboundLogistics, function(out2) {
+      var out = '';
+      if (out2.distributionModel) out += '<div class="vc-field"><span class="vc-field-label">Distribution model:</span> ' + e(out2.distributionModel) + '</div>';
+      if (out2.dcFootprint) out += '<div class="vc-field"><span class="vc-field-label">DC footprint:</span> ' + e(out2.dcFootprint) + '</div>';
+      if (out2.topExportMarkets && out2.topExportMarkets.length) out += '<div class="vc-field"><span class="vc-field-label">Top export markets:</span> ' + out2.topExportMarkets.map(function(m) { return e(m); }).join(', ') + '</div>';
+      if (out2.channelInventoryStatus) out += '<div class="vc-field"><span class="vc-field-label">Channel inventory status:</span> ' + e(out2.channelInventoryStatus) + '</div>';
+      return out;
+    });
+
+    html += renderVCSection('8. Market & Customer Structure', vc.marketStructure, function(mk) {
+      var out = '';
+      if (mk.topMarkets && mk.topMarkets.length) {
+        out += '<div class="vc-field"><span class="vc-field-label">Top markets:</span>';
+        out += '<table class="vc-mini-table"><thead><tr><th>Region</th><th>Revenue share</th><th>Trend</th></tr></thead><tbody>';
+        mk.topMarkets.forEach(function(m) {
+          out += '<tr><td>' + e(m.region) + '</td><td>' + e(m.revenueShare || '') + '</td><td>' + e(m.trend || '') + '</td></tr>';
+        });
+        out += '</tbody></table></div>';
+      }
+      if (mk.mixShift) out += '<div class="vc-field"><span class="vc-field-label">Mix shift:</span> ' + e(mk.mixShift) + '</div>';
+      if (mk.customerMix) out += '<div class="vc-field"><span class="vc-field-label">Customer mix:</span> ' + e(mk.customerMix) + '</div>';
+      return out;
+    });
+
+    html += '</div></div>';
+    return html;
+  }
+
+  // Render one collapsible-ish section of the value chain
+  function renderVCSection(title, data, contentFn) {
+    var out = '<div class="vc-section">';
+    out += '<h4 class="vc-section-title">' + title + '</h4>';
+    if (!data || Object.keys(data).length === 0) {
+      out += '<p class="text-muted vc-empty">Not populated</p>';
+    } else {
+      var content = contentFn(data);
+      out += content || '<p class="text-muted vc-empty">Not populated</p>';
+    }
+    out += '</div>';
+    return out;
   }
 
   // ===== MODULE 4: DI Priorities (URAL Kit Skills) =====
