@@ -192,6 +192,15 @@ function initSettingsScreen() {
     });
   }
 
+  // Open Stakeholder Scorer
+  var scorerBtn = document.getElementById('btn-open-scorer');
+  if (scorerBtn) {
+    scorerBtn.addEventListener('click', function() {
+      AP.navigateTo('stakeholder-scorer');
+      if (AP.StakeholderScorer && AP.StakeholderScorer.init) AP.StakeholderScorer.init();
+    });
+  }
+
   // Save settings
   var saveBtn = document.getElementById('btn-save-settings');
   if (saveBtn) {

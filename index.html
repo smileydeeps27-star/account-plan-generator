@@ -144,6 +144,16 @@
 
       <div class="card mt-24">
         <div class="card-header">
+          <div class="card-title">Stakeholder Scorer <span class="text-muted" style="font-weight: 400; font-size: 12px;">— rank pasted names for a target account</span></div>
+        </div>
+        <p class="text-secondary" style="font-size: 13px; margin-bottom: 12px;">Paste a batch of names + job titles from LinkedIn Sales Navigator or your list, and the AI will score each for relevance as an Aera stakeholder — with tier, confidence, and running top-50 ranking.</p>
+        <button type="button" class="btn btn-secondary" id="btn-open-scorer">
+          <span>&#128203;</span> Open Stakeholder Scorer
+        </button>
+      </div>
+
+      <div class="card mt-24">
+        <div class="card-header">
           <div class="card-title">Saved Plans</div>
         </div>
         <div id="saved-plans-list"></div>
@@ -170,6 +180,66 @@
     <div class="screen-container" style="max-width:1100px;">
       <div id="plan-container"></div>
 
+    </div>
+  </main>
+
+  <!-- ===== Screen 3b: Stakeholder Scorer ===== -->
+  <main id="screen-stakeholder-scorer" class="screen">
+    <div class="screen-container" style="max-width:1200px;">
+      <div class="screen-header">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+          <div>
+            <h1 class="screen-title">Stakeholder Scorer</h1>
+            <p class="screen-subtitle">Paste names in batches; the AI scores each for Aera relevance and maintains a running ranked list.</p>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-scorer-home">&larr; Back</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Target Account</div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label" for="scorer-company">Company Name *</label>
+            <input type="text" id="scorer-company" class="form-input" placeholder="e.g., KraftHeinz">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="scorer-sector">Sector / Industry</label>
+            <input type="text" id="scorer-sector" class="form-input" placeholder="e.g., CPG - Beverages, Automotive OEM, Mining">
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-24">
+        <div class="card-header">
+          <div class="card-title">Batch Input</div>
+          <div class="card-subtitle">One name per line. Format: <code>Name — Title</code> or <code>Name | Title</code>. Blank lines allowed.</div>
+        </div>
+        <div class="form-group">
+          <textarea id="scorer-batch-input" class="form-textarea" rows="10" placeholder="Jane Doe — VP Supply Chain
+John Smith | Head of Digital Transformation
+Maria Rodriguez, SVP Operations
+Kevin Chen — Director S&OP"></textarea>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button type="button" class="btn btn-primary" id="btn-scorer-score">
+            <span>&#9989;</span> Score Batch & Update Ranking
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-scorer-clear-batch">Clear Batch</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-scorer-reset">Reset Ranking</button>
+        </div>
+        <div id="scorer-status" style="margin-top: 12px; font-size: 12px; color: var(--text-muted); min-height: 16px;"></div>
+      </div>
+
+      <div class="card mt-24">
+        <div class="card-header">
+          <div class="card-title">Running Ranked List <span class="text-muted" id="scorer-rank-count" style="font-weight: 400; font-size: 13px;">(0 candidates)</span></div>
+          <div class="card-subtitle">High relevance always above Medium; Medium above Low. Capped at top 50.</div>
+        </div>
+        <div id="scorer-ranked-list"></div>
+      </div>
     </div>
   </main>
 
@@ -249,6 +319,7 @@
   <script src="js/plan-editor.js"></script>
   <script src="js/plan-export.js"></script>
   <script src="js/plan-persistence.js"></script>
+  <script src="js/stakeholder-scorer.js"></script>
   <script src="js/app.js"></script>
 
 </body>

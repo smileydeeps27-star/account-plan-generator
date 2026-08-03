@@ -447,3 +447,103 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   padding: 16px 24px;
   border-top: 1px solid var(--border);
 }
+
+/* ===== Form Grid (2-col) ===== */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+@media (max-width: 700px) {
+  .form-grid-2 { grid-template-columns: 1fr; }
+}
+
+/* ===== Stakeholder Scorer ===== */
+.scorer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scorer-list-header,
+.scorer-list-row {
+  display: grid;
+  grid-template-columns: 40px minmax(200px, 1.5fr) minmax(140px, 1fr) 100px 110px minmax(220px, 2fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+.scorer-list-header {
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  font-size: 10px;
+  padding-bottom: 8px;
+}
+
+.scorer-list-row {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.scorer-list-row.scorer-relevance-high { border-left: 3px solid #34d399; }
+.scorer-list-row.scorer-relevance-medium { border-left: 3px solid #fbbf24; }
+.scorer-list-row.scorer-relevance-low { border-left: 3px solid rgba(148, 163, 184, 0.6); }
+
+.scorer-col-rank { color: var(--text-muted); font-weight: 700; text-align: right; padding-right: 4px; }
+.scorer-name { font-weight: 700; color: var(--text-primary); line-height: 1.3; }
+.scorer-title { color: var(--text-secondary); font-size: 11px; margin-top: 2px; }
+.scorer-function { color: var(--text-muted); font-size: 11px; margin-top: 4px; }
+
+.scorer-tier-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.scorer-tier-tier-1 { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+.scorer-tier-tier-2 { background: rgba(168, 85, 247, 0.15); color: #a78bfa; }
+.scorer-tier-tier-3 { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+.scorer-tier-out-of-scope { background: rgba(148, 163, 184, 0.12); color: var(--text-muted); }
+
+.scorer-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.scorer-badge-high { background: rgba(52, 211, 153, 0.15); color: #34d399; }
+.scorer-badge-medium { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+.scorer-badge-low { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); }
+.scorer-badge-excluded { background: rgba(248, 113, 113, 0.12); color: #f87171; }
+
+.scorer-conf {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-secondary);
+}
+.scorer-conf-confirmed { color: #34d399; }
+.scorer-conf-inferred { color: #fbbf24; }
+.scorer-conf-unverified { color: #f87171; }
+
+.scorer-col-rationale { color: var(--text-secondary); line-height: 1.45; font-size: 11px; }
+.scorer-category { font-size: 10px; color: var(--accent-purple); margin-top: 4px; font-weight: 600; }
+
+@media (max-width: 1000px) {
+  .scorer-list-header, .scorer-list-row {
+    grid-template-columns: 30px 1fr 90px 90px;
+  }
+  .scorer-col-rationale, .scorer-col-conf { grid-column: 2 / -1; }
+  .scorer-col-conf { text-align: left; }
+}
