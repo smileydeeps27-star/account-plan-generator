@@ -252,6 +252,7 @@ AP.PlanGenerator = (function() {
       successMetrics: [],
       valueChain: null,
       kpiBenchmarks: null,
+      friendlyContacts: null,
       _sources: []
     };
 
@@ -263,7 +264,13 @@ AP.PlanGenerator = (function() {
 
     var systemBase = 'You are a world-class B2B enterprise sales strategist at ' + sellerName + '. You have deep knowledge of every major company. Your job is to build account plans that are so insightful they could be presented to a Chief Revenue Officer.\n\nBe specific, not generic. Reference real business context, actual initiatives, and concrete data.\n\nReturn ONLY valid JSON — no markdown fences, no explanation outside the JSON.' + sellerCtx;
 
-    var TOTAL_STEPS = 9;
+    var TOTAL_STEPS = 10;
+
+    // Aera customer list — used for cross-referencing former {COMPANY} employees who are now at
+    // named Aera customers (higher warm-intro value than random employer). Keep this in sync
+    // with the customer roster; move to data/aera-content.json if it needs UI editing.
+    var AERA_CUSTOMER_LIST = 'KraftHeinz, Unilever, Dell Technologies, GSK, Estee Lauder, Rio Tinto, Kerry Foods, Viva Energy, Viatris, Gallo, Lipton, Bristol Myers Squibb, Diageo, Alcon, WGU University, Mars, Irving, ExxonMobil, Philip Morris International, BP Castrol, Hershey, Diacero, Merck, AstraZeneca, BAT, Mitsubishi Chemical Group';
+    var CONSULTING_TARGETS = 'Deloitte, ZS Associates, Accenture, EY, PwC, McKinsey, Bain, Kearney, Oliver Wyman, BCG, Roland Berger';
 
     // Value Chain analysis is expensive and only relevant to physical-product industries.
     // Skip for pure services / SaaS / financial services etc.
@@ -842,6 +849,59 @@ AP.PlanGenerator = (function() {
         if (r9.sources.length) plan._sources = plan._sources.concat(r9.sources);
       }
     } catch (err) { console.error('[PlanGen] Call 9 (KPI benchmarks) error:', err.message); }
+
+    // ===== CALL 10: Friendly Contacts — former {COMPANY} employees now at consultancies or Aera customers =====
+    AP.EventBus.emit('plan:progress', { current: 10, total: TOTAL_STEPS, phase: 'Finding warm-intro candidates (former ' + companyName + ' employees)...' });
+
+    var call10Msg = 'Identify verified former employees of:\n\n' + companyCtx +
+      '\n\nOBJECTIVE: build a longlist of 5-10 people who previously worked at ' + companyName + ' at Director level or above (within the past 5 years) AND are now at either:\n' +
+      '  (a) a major consulting/advisory firm: ' + CONSULTING_TARGETS + '\n' +
+      '  (b) a named ' + sellerName + ' customer (potential warm-intro / peer-reference): ' + AERA_CUSTOMER_LIST + '\n\n' +
+      'These are "friendly contacts" — the CP can approach them for warm intros, competitive intel, or peer references. Prioritise Supply Chain, Operations, Logistics, Procurement backgrounds; then Finance/Business Services/Customer Service/Commercial as secondary.\n\n' +
+      'SEARCH APPROACH:\n' +
+      '- LinkedIn people search: "was at ' + companyName + '" + current employer filter\n' +
+      '- LinkedIn alumni pages if the company has one\n' +
+      '- Press releases announcing appointments at consultancies/customers naming ' + companyName + ' as prior employer\n' +
+      '- Conference speaker bios that list prior role at ' + companyName + '\n' +
+      '- Published articles/papers where the author bio references prior ' + companyName + ' employment\n\n' +
+      'STRICT EVIDENCE GATE (both must pass, or exclude the person):\n' +
+      '- PAST ROLE PROOF: source showing they worked at ' + companyName + ' as Director+ with dates (within past 5 years). Cite URL + publication date.\n' +
+      '- CURRENT ROLE PROOF: source showing current employer + title + timing. Cite URL + publication date.\n' +
+      '- DISAMBIGUATOR: location, business unit, distinctive prior role, or second independent source. Prevents same-name confusion.\n' +
+      '- Only High (2+ independent sources) or Medium (1 clear source) confidence — never Low.\n' +
+      '- No inference. No "likely" or "appears to". If unverifiable → exclude.\n\n' +
+      'FALLBACK IF NOTHING VERIFIABLE: Return an empty candidates array plus 5-10 specific search queries a human researcher could run to find these people manually. Format search queries as strings ready to paste into LinkedIn Sales Navigator or Google.\n\n' +
+      'Return JSON:\n' +
+      '{\n' +
+      '  "friendlyContacts": {\n' +
+      '    "candidates": [\n' +
+      '      {\n' +
+      '        "name": "Full Name",\n' +
+      '        "linkedinUrl": "LinkedIn profile URL if visible, else empty",\n' +
+      '        "formerRole": {"title": "Previous title at ' + companyName + '", "dates": "e.g., 2019-2022"},\n' +
+      '        "currentRole": {"company": "Current employer", "title": "Current title", "dates": "e.g., 2022-present", "category": "Consultancy|Aera Customer"},\n' +
+      '        "background": "Supply Chain|Operations|Logistics|Procurement|Finance|Business Services|Commercial",\n' +
+      '        "location": "City/Country if public",\n' +
+      '        "pastRoleProof": {"claim": "What the source says", "sourceUrl": "URL", "sourceDate": "Mon YYYY"},\n' +
+      '        "currentRoleProof": {"claim": "What the source says", "sourceUrl": "URL", "sourceDate": "Mon YYYY"},\n' +
+      '        "disambiguator": "Location + BU + distinctive prior role, or second source URL",\n' +
+      '        "confidence": "High|Medium",\n' +
+      '        "warmIntroAngle": "1-2 SHORT SENTENCES: specific way CP could approach this person — reference their overlap with the current deal (functional area, business unit, transformation experience)"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "searchQueries": ["Specific search string 1", "Specific search string 2"],\n' +
+      '    "notFoundNote": "Only populate if candidates is empty — explain what was searched and why nothing was verifiable"\n' +
+      '  }\n' +
+      '}\n\n' +
+      'Target 5-8 High/Medium-confidence candidates. Prefer people at Aera customers over consultancies (higher peer-reference value). Never invent people or dates.';
+
+    try {
+      var r10 = await groundedCall(systemBase, call10Msg, 10240, 'friendlyContacts');
+      if (r10.data) {
+        plan.friendlyContacts = r10.data.friendlyContacts || null;
+        if (r10.sources.length) plan._sources = plan._sources.concat(r10.sources);
+      }
+    } catch (err) { console.error('[PlanGen] Call 10 (friendly contacts) error:', err.message); }
 
     // ===== Build numbered references and apply inline citations =====
     plan._references = buildReferences(plan._sources);

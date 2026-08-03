@@ -45,6 +45,7 @@ AP.PlanRenderer = (function() {
       { id: 'benchmarks', label: 'KPI Benchmarks' },
       { id: 'priorities', label: 'DI Priorities' },
       { id: 'stakeholders', label: 'Stakeholders' },
+      { id: 'friendlycontacts', label: 'Friendly Contacts' },
       { id: 'competitive', label: 'Competitive' },
       { id: 'value', label: 'Value' },
       { id: 'strategy', label: 'Strategy' },
@@ -73,6 +74,7 @@ AP.PlanRenderer = (function() {
     html += renderKpiBenchmarks(plan);
     html += renderPriorities(plan);
     html += renderStakeholders(plan);
+    html += renderFriendlyContacts(plan);
     html += renderCompetitive(plan);
     html += renderValue(plan);
     html += renderStrategy(plan);
@@ -638,6 +640,150 @@ AP.PlanRenderer = (function() {
     }
     html += '</div>';
     return html;
+  }
+
+  // ===== MODULE 5.5: Friendly Contacts (warm-intro candidates) =====
+  function renderFriendlyContacts(plan) {
+    var fc = plan.friendlyContacts || {};
+    var html = '<div id="panel-friendlycontacts" class="plan-panel">';
+    html += '<h3 class="section-title">Friendly Contacts <span class="text-muted" style="font-weight: 400; font-size: 13px;">— warm-intro candidates</span></h3>';
+    html += '<p class="text-muted" style="margin-bottom: 16px; font-size: 12px;">Former ' + e(plan.companyName || 'company') + ' employees (Director+ within the past 5 years) now at major consultancies or Aera customers. Each candidate has verified Past Role Proof and Current Role Proof.</p>';
+
+    if (!plan.friendlyContacts) {
+      html += '<p class="text-muted">Friendly contacts research not generated. Regenerate the plan to populate this section.</p>';
+      html += '</div>';
+      return html;
+    }
+
+    var candidates = fc.candidates || [];
+
+    if (candidates.length) {
+      // Split into two lanes: Aera customers first (higher warm-intro value), then consultancies
+      var aeraCustomerRows = candidates.filter(function(c) { return (c.currentRole && c.currentRole.category) === 'Aera Customer'; });
+      var consultancyRows = candidates.filter(function(c) { return (c.currentRole && c.currentRole.category) === 'Consultancy'; });
+      var otherRows = candidates.filter(function(c) { return !c.currentRole || (c.currentRole.category !== 'Aera Customer' && c.currentRole.category !== 'Consultancy'); });
+
+      var companyName = plan.companyName || 'company';
+      if (aeraCustomerRows.length) {
+        html += '<h4 class="fc-group-title fc-group-title-customer">Now at Aera Customers <span class="fc-group-count">' + aeraCustomerRows.length + '</span></h4>';
+        html += renderFriendlyContactCards(aeraCustomerRows, companyName);
+      }
+      if (consultancyRows.length) {
+        html += '<h4 class="fc-group-title fc-group-title-consultancy" style="margin-top: 24px;">Now at Consultancies <span class="fc-group-count">' + consultancyRows.length + '</span></h4>';
+        html += renderFriendlyContactCards(consultancyRows, companyName);
+      }
+      if (otherRows.length) {
+        html += '<h4 class="fc-group-title" style="margin-top: 24px;">Other <span class="fc-group-count">' + otherRows.length + '</span></h4>';
+        html += renderFriendlyContactCards(otherRows, companyName);
+      }
+    } else {
+      // No candidates found — show fallback
+      html += '<div class="fc-empty-callout">';
+      html += '<div class="fc-empty-icon">🔍</div>';
+      html += '<div class="fc-empty-body">';
+      html += '<div class="fc-empty-title">No verifiable friendly contacts found in public sources</div>';
+      if (fc.notFoundNote) {
+        html += '<p class="fc-empty-note">' + e(fc.notFoundNote) + '</p>';
+      }
+      html += '<p class="fc-empty-instructions">Run these searches manually in LinkedIn Sales Navigator or Google to find candidates:</p>';
+      if (fc.searchQueries && fc.searchQueries.length) {
+        html += '<ul class="fc-search-list">';
+        fc.searchQueries.forEach(function(q) {
+          html += '<li><code>' + e(q) + '</code></li>';
+        });
+        html += '</ul>';
+      }
+      html += '</div></div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderFriendlyContactCards(rows, companyName) {
+    var out = '<div class="fc-cards">';
+    rows.forEach(function(c) {
+      out += '<div class="fc-card">';
+
+      // Header — name + confidence + LinkedIn
+      out += '<div class="fc-card-head">';
+      out += '<div class="fc-card-name">';
+      if (c.linkedinUrl) {
+        out += '<a href="' + e(c.linkedinUrl) + '" target="_blank" rel="noopener">' + e(c.name) + ' ↗</a>';
+      } else {
+        out += e(c.name);
+      }
+      out += '</div>';
+      if (c.confidence) {
+        var confClass = c.confidence === 'High' ? 'conf-high' : 'conf-medium';
+        out += '<span class="fc-conf-badge ' + confClass + '">' + e(c.confidence) + '</span>';
+      }
+      out += '</div>';
+
+      // Employment path — former → current
+      out += '<div class="fc-path">';
+      if (c.formerRole) {
+        out += '<div class="fc-path-node fc-path-former">';
+        out += '<span class="fc-path-label">Was at ' + e(companyName) + '</span>';
+        out += '<span class="fc-path-value">' + e(c.formerRole.title || '');
+        if (c.formerRole.dates) out += ' <em>· ' + e(c.formerRole.dates) + '</em>';
+        out += '</span></div>';
+      }
+      out += '<div class="fc-path-arrow">→</div>';
+      if (c.currentRole) {
+        var isCustomer = c.currentRole.category === 'Aera Customer';
+        out += '<div class="fc-path-node fc-path-current' + (isCustomer ? ' fc-current-customer' : ' fc-current-consultancy') + '">';
+        out += '<span class="fc-path-label">Now at ' + e(c.currentRole.company || '') + '</span>';
+        out += '<span class="fc-path-value">' + e(c.currentRole.title || '');
+        if (c.currentRole.dates) out += ' <em>· ' + e(c.currentRole.dates) + '</em>';
+        out += '</span></div>';
+      }
+      out += '</div>';
+
+      // Background + location + disambiguator
+      var metaBits = [];
+      if (c.background) metaBits.push('<span class="fc-meta-bit"><span class="fc-meta-label">Background:</span> ' + e(c.background) + '</span>');
+      if (c.location) metaBits.push('<span class="fc-meta-bit"><span class="fc-meta-label">Location:</span> ' + e(c.location) + '</span>');
+      if (metaBits.length) out += '<div class="fc-meta-row">' + metaBits.join('') + '</div>';
+
+      // Warm intro angle
+      if (c.warmIntroAngle) {
+        out += '<div class="fc-angle"><span class="fc-angle-label">Warm-intro angle:</span> ' + e(c.warmIntroAngle) + '</div>';
+      }
+
+      // Evidence footer — collapsible feel
+      if (c.pastRoleProof || c.currentRoleProof || c.disambiguator) {
+        out += '<div class="fc-evidence">';
+        if (c.pastRoleProof) {
+          out += '<div class="fc-evidence-row"><span class="fc-evidence-label">Past role proof:</span> ' + e(c.pastRoleProof.claim || '');
+          if (c.pastRoleProof.sourceUrl || c.pastRoleProof.sourceDate) {
+            out += ' <em>(';
+            if (c.pastRoleProof.sourceUrl) out += '<a href="' + e(c.pastRoleProof.sourceUrl) + '" target="_blank" rel="noopener">source</a>';
+            if (c.pastRoleProof.sourceDate) out += ', ' + e(c.pastRoleProof.sourceDate);
+            out += ')</em>';
+          }
+          out += '</div>';
+        }
+        if (c.currentRoleProof) {
+          out += '<div class="fc-evidence-row"><span class="fc-evidence-label">Current role proof:</span> ' + e(c.currentRoleProof.claim || '');
+          if (c.currentRoleProof.sourceUrl || c.currentRoleProof.sourceDate) {
+            out += ' <em>(';
+            if (c.currentRoleProof.sourceUrl) out += '<a href="' + e(c.currentRoleProof.sourceUrl) + '" target="_blank" rel="noopener">source</a>';
+            if (c.currentRoleProof.sourceDate) out += ', ' + e(c.currentRoleProof.sourceDate);
+            out += ')</em>';
+          }
+          out += '</div>';
+        }
+        if (c.disambiguator) {
+          out += '<div class="fc-evidence-row"><span class="fc-evidence-label">Disambiguator:</span> ' + e(c.disambiguator) + '</div>';
+        }
+        out += '</div>';
+      }
+
+      out += '</div>';
+    });
+    out += '</div>';
+    return out;
   }
 
   // ===== MODULE 6: Competitive (Enhanced with user-reported) =====
