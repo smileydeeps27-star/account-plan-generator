@@ -251,6 +251,7 @@ AP.PlanGenerator = (function() {
       risks: [],
       successMetrics: [],
       valueChain: null,
+      kpiBenchmarks: null,
       _sources: []
     };
 
@@ -262,7 +263,7 @@ AP.PlanGenerator = (function() {
 
     var systemBase = 'You are a world-class B2B enterprise sales strategist at ' + sellerName + '. You have deep knowledge of every major company. Your job is to build account plans that are so insightful they could be presented to a Chief Revenue Officer.\n\nBe specific, not generic. Reference real business context, actual initiatives, and concrete data.\n\nReturn ONLY valid JSON — no markdown fences, no explanation outside the JSON.' + sellerCtx;
 
-    var TOTAL_STEPS = 8;
+    var TOTAL_STEPS = 9;
 
     // Value Chain analysis is expensive and only relevant to physical-product industries.
     // Skip for pure services / SaaS / financial services etc.
@@ -764,6 +765,83 @@ AP.PlanGenerator = (function() {
         }
       } catch (err) { console.error('[PlanGen] Call 8 (value chain) error:', err.message); }
     }
+
+    // ===== CALL 9: Industry KPI Benchmarks (grounded) =====
+    AP.EventBus.emit('plan:progress', { current: 9, total: TOTAL_STEPS, phase: 'Benchmarking supply chain KPIs against industry...' });
+
+    var companyPerfContext = '';
+    if (plan.valueChain && plan.valueChain.manufacturing && plan.valueChain.manufacturing.publicKpis && plan.valueChain.manufacturing.publicKpis.length) {
+      companyPerfContext += '\nCompany-disclosed operational KPIs: ' + plan.valueChain.manufacturing.publicKpis.join('; ');
+    }
+    var priorityAreasCtx = plan.diPriorities.slice(0, 5).map(function(p) { return p.area; }).join('; ');
+
+    var call9Msg = 'Build an industry KPI benchmark for supply chain performance at:\n\n' + companyCtx + overviewContext + companyPerfContext +
+      '\n\nTop DI Priorities identified: ' + priorityAreasCtx +
+      '\n\nObjective: give the ' + sellerName + ' CP a set of measurable industry benchmarks so they can position ' + sellerName + '\'s expected KPI lift against numbers a CFO/COO will recognise. Every benchmark must be cited from a source no older than 36 months.\n\n' +
+      'SEARCH SOURCES (in this order):\n' +
+      '1. Gartner Supply Chain Top 25 reports, Gartner benchmark surveys\n' +
+      '2. APICS/ASCM benchmarks, SCC (Supply Chain Council) SCOR benchmarks\n' +
+      '3. IDC, Deloitte, McKinsey supply chain benchmark studies\n' +
+      '4. Industry trade press with benchmarking data (Supply Chain Dive, Automotive News, Food Dive, ChemWeek)\n' +
+      '5. The company\'s own disclosed operational KPIs from earnings calls, annual reports, capital markets days\n\n' +
+      'COVER THESE STANDARD SUPPLY CHAIN KPIs (skip any that are truly irrelevant to this industry):\n' +
+      '1. OTIF (On-Time In-Full) — service reliability\n' +
+      '2. Fill rate / service level\n' +
+      '3. Inventory turns / Days Inventory on Hand (DOH)\n' +
+      '4. Forecast accuracy (MAPE or WMAPE)\n' +
+      '5. E&O / short-dated / expired waste as % of sales\n' +
+      '6. Logistics cost as % of sales\n' +
+      '7. Expedite / air freight cost as % of total freight\n' +
+      '8. Planning cycle time (S&OP to execution)\n' +
+      '9. Shortage / backorder rate\n\n' +
+      'PLUS 2-3 INDUSTRY-SPECIFIC KPIs relevant to this company\'s sector (e.g., fresh sell-through % for CPG-food; warranty claim rate for auto; batch yield for chemicals; on-shelf availability for retail; capacity utilisation for chemicals/energy).\n\n' +
+      'ANTI-HALLUCINATION RULES:\n' +
+      '- Every "typicalRange" must have a source citation with a date within the last 36 months.\n' +
+      '- If a benchmark for this specific sub-industry is not publicly available, mark it [ESTIMATED] and cite the closest adjacent-industry benchmark.\n' +
+      '- For "companyPerformance": only use numbers the company has actually disclosed. Use "Not disclosed" otherwise — never estimate a company\'s specific number.\n' +
+      '- "gapToBenchmark" is only computable when both companyPerformance and the benchmark are numeric. Otherwise: "Not comparable".\n\n' +
+      'Return JSON:\n' +
+      '{\n' +
+      '  "kpiBenchmarks": {\n' +
+      '    "sector": "Specific industry vertical the benchmarks are calibrated to (e.g., \\"Consumer Packaged Goods — Beverages\\")",\n' +
+      '    "supplyChainKpis": [\n' +
+      '      {\n' +
+      '        "kpi": "OTIF",\n' +
+      '        "definition": "1 SHORT sentence — what it measures",\n' +
+      '        "typicalRange": "e.g., 88-95%",\n' +
+      '        "worldClass": "e.g., 97%+",\n' +
+      '        "trend": "1-2 SENTENCES on recent trend and drivers",\n' +
+      '        "citation": {"source": "Gartner Supply Chain Top 25 2024 | APICS Benchmark | Company IR", "date": "Mon YYYY", "url": "URL if available"},\n' +
+      '        "companyPerformance": "Number if disclosed, else \\"Not disclosed\\"",\n' +
+      '        "gapToBenchmark": "Above|At|Below by X pp | Not comparable",\n' +
+      '        "aeraLever": "1 SENTENCE — which ' + sellerName + ' Skill/capability moves this KPI (reference the DI Priorities where applicable)"\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "industrySpecificKpis": [\n' +
+      '      {\n' +
+      '        "kpi": "Sector-specific KPI name",\n' +
+      '        "definition": "1 SHORT sentence",\n' +
+      '        "typicalRange": "Range with unit",\n' +
+      '        "worldClass": "World-class number",\n' +
+      '        "trend": "1-2 sentences with source",\n' +
+      '        "citation": {"source": "", "date": "", "url": ""},\n' +
+      '        "companyPerformance": "",\n' +
+      '        "gapToBenchmark": "",\n' +
+      '        "aeraLever": ""\n' +
+      '      }\n' +
+      '    ],\n' +
+      '    "keyTakeaway": "2-3 SENTENCES summarising where this company likely has the biggest KPI gap to industry benchmark and which ' + sellerName + ' priority addresses it. Ground in the disclosed numbers."\n' +
+      '  }\n' +
+      '}\n\n' +
+      'Include 7-9 standard KPIs and 2-3 industry-specific KPIs. Every KPI must have a citation and an aeraLever. Cross-reference the DI Priorities where relevant so the CP can see the story flowing: benchmark gap → Aera Skill → expected lift.';
+
+    try {
+      var r9 = await groundedCall(systemBase, call9Msg, 12288, 'kpiBenchmarks');
+      if (r9.data) {
+        plan.kpiBenchmarks = r9.data.kpiBenchmarks || null;
+        if (r9.sources.length) plan._sources = plan._sources.concat(r9.sources);
+      }
+    } catch (err) { console.error('[PlanGen] Call 9 (KPI benchmarks) error:', err.message); }
 
     // ===== Build numbered references and apply inline citations =====
     plan._references = buildReferences(plan._sources);

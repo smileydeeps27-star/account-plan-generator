@@ -42,6 +42,7 @@ AP.PlanRenderer = (function() {
       { id: 'news', label: 'News' },
       { id: 'techlandscape', label: 'Tech Stack' },
       { id: 'valuechain', label: 'Value Chain' },
+      { id: 'benchmarks', label: 'KPI Benchmarks' },
       { id: 'priorities', label: 'DI Priorities' },
       { id: 'stakeholders', label: 'Stakeholders' },
       { id: 'competitive', label: 'Competitive' },
@@ -69,6 +70,7 @@ AP.PlanRenderer = (function() {
     html += renderNews(plan);
     html += renderTechLandscape(plan);
     html += renderValueChain(plan);
+    html += renderKpiBenchmarks(plan);
     html += renderPriorities(plan);
     html += renderStakeholders(plan);
     html += renderCompetitive(plan);
@@ -404,6 +406,86 @@ AP.PlanRenderer = (function() {
       var content = contentFn(data);
       out += content || '<p class="text-muted vc-empty">Not populated</p>';
     }
+    out += '</div>';
+    return out;
+  }
+
+  // ===== MODULE 3.75: KPI Benchmarks =====
+  function renderKpiBenchmarks(plan) {
+    var kb = plan.kpiBenchmarks || {};
+    var html = '<div id="panel-benchmarks" class="plan-panel">';
+    html += '<h3 class="section-title">Industry KPI Benchmarks</h3>';
+
+    if (!plan.kpiBenchmarks) {
+      html += '<p class="text-muted">KPI benchmarks not generated. Regenerate the plan to populate industry benchmarks and the company\'s gap analysis.</p>';
+      html += '</div>';
+      return html;
+    }
+
+    if (kb.sector) {
+      html += '<p class="kpi-sector-line"><span class="kpi-sector-label">Calibrated to:</span> ' + e(kb.sector) + '</p>';
+    }
+
+    if (kb.keyTakeaway) {
+      html += '<div class="kpi-takeaway"><span class="kpi-takeaway-label">Key Takeaway</span><span class="kpi-takeaway-body">' + e(kb.keyTakeaway) + '</span></div>';
+    }
+
+    // Standard supply chain KPIs
+    if (kb.supplyChainKpis && kb.supplyChainKpis.length) {
+      html += '<h4 class="kpi-group-title">Supply Chain KPIs</h4>';
+      html += renderKpiTable(kb.supplyChainKpis);
+    }
+
+    // Industry-specific KPIs
+    if (kb.industrySpecificKpis && kb.industrySpecificKpis.length) {
+      html += '<h4 class="kpi-group-title" style="margin-top: 24px;">Industry-Specific KPIs</h4>';
+      html += renderKpiTable(kb.industrySpecificKpis);
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderKpiTable(kpis) {
+    var out = '<div class="kpi-cards">';
+    kpis.forEach(function(k) {
+      out += '<div class="kpi-card">';
+      // Header row: KPI name + gap badge
+      out += '<div class="kpi-card-head">';
+      out += '<div class="kpi-card-name">' + e(k.kpi) + '</div>';
+      if (k.gapToBenchmark) {
+        var gapLower = String(k.gapToBenchmark).toLowerCase();
+        var gapClass = 'gap-neutral';
+        if (gapLower.indexOf('above') === 0 || gapLower.indexOf('at ') === 0 || gapLower.indexOf('at benchmark') >= 0) gapClass = 'gap-above';
+        else if (gapLower.indexOf('below') === 0) gapClass = 'gap-below';
+        out += '<span class="kpi-gap-badge ' + gapClass + '">' + e(k.gapToBenchmark) + '</span>';
+      }
+      out += '</div>';
+
+      if (k.definition) out += '<div class="kpi-def">' + e(k.definition) + '</div>';
+
+      // Range row: typical / world-class / company
+      out += '<div class="kpi-range-row">';
+      if (k.typicalRange) out += '<div class="kpi-range-item"><span class="kpi-range-label">Typical</span><span class="kpi-range-value">' + e(k.typicalRange) + '</span></div>';
+      if (k.worldClass) out += '<div class="kpi-range-item"><span class="kpi-range-label">World-Class</span><span class="kpi-range-value">' + e(k.worldClass) + '</span></div>';
+      if (k.companyPerformance) {
+        var undisclosed = /not disclosed|not comparable|not found/i.test(k.companyPerformance);
+        out += '<div class="kpi-range-item kpi-range-company' + (undisclosed ? ' kpi-undisclosed' : '') + '"><span class="kpi-range-label">This Company</span><span class="kpi-range-value">' + e(k.companyPerformance) + '</span></div>';
+      }
+      out += '</div>';
+
+      if (k.trend) out += '<div class="kpi-trend"><span class="kpi-field-label">Trend:</span> ' + e(k.trend) + '</div>';
+
+      if (k.aeraLever) out += '<div class="kpi-lever"><span class="kpi-field-label">Aera Lever:</span> ' + e(k.aeraLever) + '</div>';
+
+      if (k.citation && (k.citation.source || k.citation.url)) {
+        out += '<div class="kpi-citation"><em>Source: ' + e(k.citation.source || '');
+        if (k.citation.date) out += ', ' + e(k.citation.date);
+        out += '</em></div>';
+      }
+
+      out += '</div>';
+    });
     out += '</div>';
     return out;
   }
