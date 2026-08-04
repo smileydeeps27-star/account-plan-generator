@@ -94,6 +94,36 @@ AP.PlanOutreach = (function() {
       }).join('\n') + '\n';
     }
 
+    // Enhancement 2a: value chain hot-spots — the highest-signal anchors for a cold-touch email
+    var valueChainContext = '';
+    if (plan.valueChain && plan.valueChain.aeraHotSpots && plan.valueChain.aeraHotSpots.length > 0) {
+      valueChainContext = 'Value Chain Hot-Spots (specific execution gaps where Aera lands hardest):\n' +
+        plan.valueChain.aeraHotSpots.slice(0, 3).map(function(h) {
+          return '- [' + (h.location || '') + '] ' + (h.pain || '') +
+            (h.estimatedImpact ? ' | Impact: ' + h.estimatedImpact : '');
+        }).join('\n') + '\n';
+    }
+
+    // Enhancement 2b: biggest KPI gaps — quantifiable anchors ("OTIF 5.5pp below world-class")
+    var kpiGapContext = '';
+    if (plan.kpiBenchmarks && plan.kpiBenchmarks.supplyChainKpis) {
+      var gapsBelow = plan.kpiBenchmarks.supplyChainKpis.filter(function(k) {
+        return /below/i.test(k.gapToBenchmark || '');
+      });
+      if (gapsBelow.length > 0) {
+        kpiGapContext = 'Biggest KPI Gaps vs Benchmark (quantifiable anchors for opening lines):\n' +
+          gapsBelow.slice(0, 3).map(function(k) {
+            return '- ' + k.kpi + ': ' + (k.companyPerformance || 'company perf') + ' — ' + (k.gapToBenchmark || '') +
+              (k.aeraLever ? ' | Aera lever: ' + k.aeraLever : '');
+          }).join('\n') + '\n';
+      }
+    }
+
+    // Enhancement 1: Aera customer list — hard guardrail against fabricating customers
+    var aeraCustomerList = (AP.AeraCustomers && AP.AeraCustomers.listString) || '';
+    var customerGuardBlock = aeraCustomerList ?
+      '\n--- APPROVED AERA CUSTOMER LIST (cite ONLY these — never invent others) ---\n' + aeraCustomerList + '\n' : '';
+
     var aeraContent = AP.AeraContent ? AP.AeraContent.getContextString() : '';
 
     // Build selections block
@@ -131,19 +161,34 @@ AP.PlanOutreach = (function() {
         '- Pick the MOST RELEVANT content for each stakeholder\'s role and industry\n';
     }
 
-    var userMessage = companyContext + '\n' + strategyContext + '\n' + valuePitch + '\n' + diContext + '\n' + techContext + '\n' + newsContext + '\n' + aeraContentBlock + '\n' + selectionsBlock +
+    var userMessage = companyContext + '\n' + strategyContext + '\n' + valuePitch + '\n' + diContext + '\n' +
+      techContext + '\n' + newsContext + '\n' + valueChainContext + '\n' + kpiGapContext + '\n' +
+      customerGuardBlock + '\n' + aeraContentBlock + '\n' + selectionsBlock +
       '\n--- INSTRUCTIONS ---\n' +
-      'Generate one email per recipient above. Follow these rules:\n' +
-      '- Each email under 150 words\n' +
-      '- Professional but warm tone\n' +
-      '- Reference specific details about the person (their quotes, their role\'s priorities)\n' +
-      '- Clear call-to-action at the end\n' +
-      '- Subject line under 60 characters, compelling and specific\n' +
-      '- For "Cold Intro": reference a trigger (news, quote, or industry trend)\n' +
-      '- For "Insight Share": lead with a relevant insight, not a sales pitch\n' +
-      '- For "Executive Briefing Request": propose specific topic aligned to their priorities\n' +
-      '- For "Event Invite": reference a relevant upcoming event or webinar\n' +
-      '- For "Follow-up": reference previous interaction and propose concrete next step\n\n' +
+      'Generate one email per recipient above. Follow these rules:\n\n' +
+      'LENGTH & TONE:\n' +
+      '- Aim for 150-200 words per email — scannable in 20 seconds, but do NOT strip substance to hit a word count.\n' +
+      '- Professional but warm; direct, not fluffy. Zero cliché ("in today\'s fast-moving landscape…").\n' +
+      '- Subject line under 60 characters, compelling and specific to the recipient — never generic.\n\n' +
+      'PERSONALISATION (mandatory):\n' +
+      '- Open with a genuine specific — their public quote, a recent initiative in their remit, or a role-relevant observation. Never open with "I hope this finds you well".\n' +
+      '- Reference at least one concrete signal from the plan context above (a value-chain hot-spot, a KPI benchmark gap, a news item, or a strategic priority). Do not open a generic template.\n\n' +
+      'DIAGNOSTIC HYPOTHESIS PATTERN (Cold Intro + Executive Briefing Request):\n' +
+      '- After the specific anchor, offer a diagnostic hypothesis in the form: "I\'d guess the challenge isn\'t X, but Y" — where X is the obvious/surface issue and Y is the real execution-gap problem Aera addresses. This shows insight and invites confirmation without presuming to know their org.\n' +
+      '- Then land the Aera play in 1-2 short sentences using plain-English URAL: senses/recommends/executes/learns — never use the term "URAL" itself.\n\n' +
+      'PROOF POINTS — HARD RULE (anti-hallucination):\n' +
+      '- When citing Aera customers, use ONLY companies from the APPROVED AERA CUSTOMER LIST above.\n' +
+      '- Prefer 1-2 customers whose industry/segment matches the recipient\'s (e.g., Dell for data-centre supply chains, Mars/KraftHeinz for CPG, Rio Tinto for industrial commodities, ExxonMobil for energy, AstraZeneca/GSK/Merck for pharma).\n' +
+      '- Never invent customer names or claim customers not on the approved list. If no listed customer fits, drop the proof-point rather than fabricating.\n\n' +
+      'CALL-TO-ACTION:\n' +
+      '- Prefer QUESTION-BASED CTAs over meeting-asks (question CTAs get much higher reply rates). Examples: "Curious — is [company] already treating X as a distinct planning stream, or still running it through the [status-quo] cadence?" | "Worth 15 minutes on how [company] is handling [specific challenge]?"\n' +
+      '- The question should reference a specific detail from the email body — never a generic "let\'s connect?"\n\n' +
+      'EMAIL-TYPE-SPECIFIC RULES:\n' +
+      '- "Cold Intro": open with the anchor, use the diagnostic hypothesis pattern, close with a question CTA. Include at least one Aera customer reference from the approved list.\n' +
+      '- "Insight Share": lead with a hard insight (KPI benchmark, industry data point, or hot-spot), not a sales pitch. Include a whitepaper/blog URL from Aera content.\n' +
+      '- "Executive Briefing Request": propose a specific topic aligned to their DI Priority. Reference analyst recognition (Gartner Leader, etc.) with URL. Use diagnostic hypothesis.\n' +
+      '- "Event Invite": reference a specific upcoming event with date, location, and registration URL from Aera content.\n' +
+      '- "Follow-up": reference previous interaction and propose a concrete next step. Include a value-add link (whitepaper/blog) from Aera content.\n\n' +
       'Return JSON:\n' +
       '{\n' +
       '  "emails": [\n' +
