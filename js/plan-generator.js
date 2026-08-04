@@ -266,10 +266,9 @@ AP.PlanGenerator = (function() {
 
     var TOTAL_STEPS = 10;
 
-    // Aera customer list — used for cross-referencing former {COMPANY} employees who are now at
-    // named Aera customers (higher warm-intro value than random employer). Keep this in sync
-    // with the customer roster; move to data/aera-content.json if it needs UI editing.
-    var AERA_CUSTOMER_LIST = 'KraftHeinz, Unilever, Dell Technologies, GSK, Estee Lauder, Rio Tinto, Kerry Foods, Viva Energy, Viatris, Gallo, Lipton, Bristol Myers Squibb, Diageo, Alcon, WGU University, Mars, Irving, ExxonMobil, Philip Morris International, BP Castrol, Hershey, Diacero, Merck, AstraZeneca, BAT, Mitsubishi Chemical Group';
+    // Aera customer list is the canonical roster from AP.AeraCustomers — shared with the
+    // renderer for badge cross-referencing throughout the plan.
+    var AERA_CUSTOMER_LIST = (AP.AeraCustomers && AP.AeraCustomers.listString) || '';
     var CONSULTING_TARGETS = 'Deloitte, ZS Associates, Accenture, EY, PwC, McKinsey, Bain, Kearney, Oliver Wyman, BCG, Roland Berger';
 
     // Value Chain analysis is expensive and only relevant to physical-product industries.

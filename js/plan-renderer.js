@@ -36,6 +36,16 @@ AP.PlanRenderer = (function() {
     html += '</div>';
     html += '</div>';
 
+    // Aera customer banner — if the target company is already an Aera customer, flag it.
+    if (AP.AeraCustomers && AP.AeraCustomers.isCustomer(plan.companyName)) {
+      html += '<div class="aera-customer-banner">';
+      html += '<span class="aera-customer-banner-icon">&#9733;</span>';
+      html += '<div class="aera-customer-banner-body">';
+      html += '<div class="aera-customer-banner-title">' + e(plan.companyName) + ' is an existing Aera customer</div>';
+      html += '<div class="aera-customer-banner-subtitle">This is an expansion/renewal motion, not a new-logo pursuit — reference existing footprint and reference-able outcomes in outreach.</div>';
+      html += '</div></div>';
+    }
+
     // Tabs
     var tabs = [
       { id: 'overview', label: 'Overview' },
@@ -185,6 +195,16 @@ AP.PlanRenderer = (function() {
       html += '<p class="text-muted">No news items generated.</p>';
     } else {
       plan.news.forEach(function(n, i) {
+        // Cross-reference: does this news item mention any Aera customer?
+        var customerMentions = [];
+        if (AP.AeraCustomers) {
+          var scanText = (n.headline || '') + ' ' + (n.detail || '');
+          customerMentions = AP.AeraCustomers.findMentions(scanText).filter(function(c) {
+            // Exclude the plan's own company — the header banner already flags that.
+            return !AP.AeraCustomers.isCustomer(plan.companyName) || c.name.toLowerCase() !== (plan.companyName || '').toLowerCase();
+          });
+        }
+
         html += '<div class="news-item">';
         html += '<div class="news-item-header"><div class="news-item-headline">' + (i + 1) + '. ' + e(n.headline) + cite(n._citations) + '</div>';
         if (n.date) html += '<div class="news-item-date">' + e(n.date) + '</div>';
@@ -193,6 +213,9 @@ AP.PlanRenderer = (function() {
         html += '<div class="news-item-footer">';
         if (n.source) html += '<span>Source: ' + e(n.source) + '</span>';
         if (n.relevanceTag) html += '<span class="badge badge-blue">' + e(n.relevanceTag) + '</span>';
+        customerMentions.forEach(function(c) {
+          html += '<span class="badge aera-customer-badge" title="' + e(c.name) + ' is an Aera customer — peer reference available">&#9733; ' + e(c.name) + ' (Aera customer)</span>';
+        });
         html += '</div></div>';
       });
     }
@@ -313,7 +336,12 @@ AP.PlanRenderer = (function() {
         out += '<div class="vc-field"><span class="vc-field-label">Tier-1 suppliers:</span>';
         out += '<table class="vc-mini-table"><thead><tr><th>Category</th><th>Supplier</th><th>Scope</th><th>Confidence</th></tr></thead><tbody>';
         sb.tier1Suppliers.forEach(function(s) {
-          out += '<tr><td>' + e(s.category) + '</td><td>' + e(s.supplier) + '</td><td>' + e(s.scope || '') + '</td><td>' + e(s.confidence || '') + '</td></tr>';
+          // Badge suppliers that are Aera customers — warm-intro angle
+          var supplierCell = e(s.supplier);
+          if (AP.AeraCustomers && AP.AeraCustomers.isCustomer(s.supplier)) {
+            supplierCell += ' <span class="badge aera-customer-badge" title="Aera customer — potential warm-intro angle">&#9733;</span>';
+          }
+          out += '<tr><td>' + e(s.category) + '</td><td>' + supplierCell + '</td><td>' + e(s.scope || '') + '</td><td>' + e(s.confidence || '') + '</td></tr>';
         });
         out += '</tbody></table></div>';
       }
@@ -1181,33 +1209,54 @@ AP.PlanRenderer = (function() {
     return html;
   }
 
-  // ===== MODULE 13a: Sources & References =====
+  // ===== MODULE 13a: Sources & Research Log =====
   function renderSources(plan) {
     var refs = plan._references || [];
     var html = '<div id="panel-sources" class="plan-panel">';
-    html += '<h3 class="section-title">Sources & References</h3>';
-    html += '<p class="text-muted mb-16">All sources retrieved via Google Search grounding during plan generation. Numbers in superscript like <sup class="citation-marker">[1]</sup> throughout this plan refer to entries below.</p>';
+    html += '<h3 class="section-title">Sources & Research Log</h3>';
+    html += '<p class="text-muted mb-16">Every fact in this plan is grounded in the sources below. Numbers in superscript like <sup class="citation-marker">[1]</sup> throughout the plan link to entries here. The counts show which modules pulled from public research vs. inference.</p>';
+
+    // Group by section — cover every grounded call we've added
+    var sectionOrder = ['overview', 'tech', 'stakeholders', 'valueChain', 'kpiBenchmarks', 'friendlyContacts', 'general'];
+    var sectionLabels = {
+      overview: 'Company Overview & News',
+      tech: 'Technology Landscape',
+      stakeholders: 'Stakeholders',
+      valueChain: 'Value Chain',
+      kpiBenchmarks: 'KPI Benchmarks',
+      friendlyContacts: 'Friendly Contacts',
+      general: 'Other'
+    };
+    var groups = {};
+    sectionOrder.forEach(function(k) { groups[k] = []; });
+    refs.forEach(function(r) {
+      var key = groups.hasOwnProperty(r.section) ? r.section : 'general';
+      groups[key].push(r);
+    });
+
+    // Research Log summary — per-section source counts
+    html += '<div class="research-log">';
+    html += '<div class="research-log-title">Research Log</div>';
+    html += '<div class="research-log-grid">';
+    sectionOrder.forEach(function(key) {
+      var count = groups[key].length;
+      var barPct = count > 0 ? Math.min(100, count * 8) : 0;
+      html += '<div class="research-log-row' + (count === 0 ? ' research-log-empty' : '') + '">';
+      html += '<div class="research-log-label">' + sectionLabels[key] + '</div>';
+      html += '<div class="research-log-bar-container"><div class="research-log-bar" style="width:' + barPct + '%"></div></div>';
+      html += '<div class="research-log-count">' + count + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div class="research-log-total">Total unique sources: <strong>' + refs.length + '</strong></div>';
+    html += '</div>';
 
     if (!refs.length) {
-      html += '<p class="text-muted">No grounding sources captured for this plan. This plan may have been generated without web search, or grounding chunks were not returned.</p>';
+      html += '<p class="text-muted">No grounding sources captured. This plan may have been generated without web search, or grounding chunks were not returned by the API.</p>';
     } else {
-      // Group by section
-      var groups = { overview: [], tech: [], stakeholders: [], general: [] };
-      refs.forEach(function(r) {
-        var key = groups[r.section] ? r.section : 'general';
-        groups[key].push(r);
-      });
-
-      var sectionLabels = {
-        overview: 'Company Overview & News',
-        tech: 'Technology Landscape',
-        stakeholders: 'Stakeholders',
-        general: 'Other'
-      };
-
-      ['overview', 'tech', 'stakeholders', 'general'].forEach(function(key) {
+      sectionOrder.forEach(function(key) {
         if (!groups[key].length) return;
-        html += '<h4 class="subsection-label mt-24">' + sectionLabels[key] + '</h4>';
+        html += '<h4 class="subsection-label mt-24">' + sectionLabels[key] + ' <span class="text-muted" style="font-weight: 400; font-size: 12px;">(' + groups[key].length + ')</span></h4>';
         html += '<ol class="sources-list">';
         groups[key].forEach(function(ref) {
           html += '<li class="source-item" id="ref-' + ref.id + '">';
